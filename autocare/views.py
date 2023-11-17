@@ -143,7 +143,7 @@ class userImagesViewSet(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        print(request.user, '2222222222222222222222222222222222222')
+        print(request.user, '22222222222222222222224222222222222222')
         user = request.user_id
         userImage = User.objects.filter(id=user)
         if userImage.exists:
