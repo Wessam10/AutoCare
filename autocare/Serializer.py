@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WorkShop, workshopBrands, Request, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
+from .models import WorkShop, workshopBrands, Specialist, Request, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
 import json
 
 
@@ -59,15 +59,25 @@ class OriginSerializer (serializers.ModelSerializer):
         fields = ['name']
 
 
+class SpecialistSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = Specialist
+        fields = ['name']
+
+
 class WorkShopSerializer (serializers.ModelSerializer):
     brands = serializers.ListField(write_only=True)
     WorkShopBrands = serializers.SerializerMethodField(read_only=True)
     originName = serializers.CharField(source='origin.name', read_only=True)
+    workshopOwnerId = serializers.CharField(
+        source='workshopOwnerId.user_id.username')
+    # specialistName = serializers.CharField(source='Specialist.name')
+    specialist = serializers.CharField(source='specialistName.name')
 
     class Meta:
         model = WorkShop
         fields = ['workshopOwnerId', 'brands', 'WorkShopBrands', 'originName', 'origin',  'locationId',
-                  'workshopName', 'currentCars', 'contactNumber', 'specialistName', 'avatar']
+                  'workshopName', 'currentCars', 'contactNumber', 'specialist', 'specialistName', 'avatar']
 
     def create(self, validated_data):
         brands_data = validated_data.pop('brands', [])  # Extract brands data
