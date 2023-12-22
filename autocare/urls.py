@@ -6,7 +6,7 @@ routers = DefaultRouter()
 routers.register('RegisterWorkShop', views.WorkShopViewSet)
 routers.register('ManageRequest', views.RequestViewSet)
 routers.register('ManageBrand', views.BrandViewSet)
-routers.register('ManageCarOwner', views.CarOwnerViewSet)
+routers.register('CreateCarOwner', views.CarOwnerViewSet)
 routers.register('ManageCars', views.CarsViewSet)
 routers.register('ManagePartSupplier', views.PartSupplierViewSet)
 routers.register('ManageProduct', views.productViewSet)
@@ -16,11 +16,14 @@ routers.register('ManageUser', views.UserViewSet)
 routers.register('ManageWorkShopOwner', views.WorkShopOwnerViewSet)
 routers.register('ManageOrigin', views.OriginViewSet)
 routers.register('manageCheckup', views.CheckupViewSet)
-routers.register('manageLocation', views.locationViewSet)
+routers.register('manageLocation', views.locViewSet)
 routers.register('manageMaintenance', views.MaintenanceViewSet)
+routers.register('manageWorkShopImages', views.WorkShopImagesViewSet)
+
 
 routers.urls
 urlpatterns = [
     path('', include(routers.urls)),
-    path('profile', views.userImagesViewSet.as_view())
+    path('profile', views.userImagesViewSet.as_view()),
+    # path('add', views.add)
 ]

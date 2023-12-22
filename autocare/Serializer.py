@@ -1,12 +1,13 @@
 from rest_framework import serializers
-from .models import WorkShop, Request, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance
+from .models import WorkShop, workshopBrands, Request, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
+import json
 
 
 class UserSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['fullName', 'password',
+        fields = ['fullName', 'username',
                   'phoneNumber', 'email', 'age',  'avatar']
 
 
@@ -15,39 +16,29 @@ class UserImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        # Include other fields as needed
-        fields = ('id', 'username', 'email', 'avatar')
+        fields = '__all__'  # ['id', 'username', 'email', 'avatar']
 
 
 class CarOwnerSerializer (serializers.ModelSerializer):
-    car = serializers.CharField(source='user_id')
+    userCars = UserSerializer(source='user_Cars', read_only=True)
 
     class Meta:
         model = CarOwner
-        fields = ['car']
+        fields = ['user_Cars', 'userCars']
 
 
 class PartSupplierSerializer (serializers.ModelSerializer):
     class Meta:
         model = PartSupplier
-        fields = ['partSupplierId', 'productId']
+        fields = ['user_id', 'productId']
 
 
 class WorkShopOwnerSerializer (serializers.ModelSerializer):
-    model = WorkShopOwner
-    fields = ['user_id']
+    user = UserSerializer(source='user_id')
 
-
-class WorkShopSerializer (serializers.ModelSerializer):
     class Meta:
-        model = WorkShop
-        fields = ['__all__']
-
-
-class RequestSerializer (serializers.ModelSerializer):
-    class Meta:
-        model = Request
-        fields = ['workshopId', 'carsId', 'type', 'date']
+        model = WorkShopOwner
+        fields = ['user']
 
 
 class BrandSerializer (serializers.ModelSerializer):
@@ -56,11 +47,73 @@ class BrandSerializer (serializers.ModelSerializer):
         fields = ['origin', 'name']
 
 
+class workshopBrandsSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = workshopBrands
+        fields = ['brands', 'workshop']
+
+
+class OriginSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = origin
+        fields = ['name']
+
+
+class WorkShopSerializer (serializers.ModelSerializer):
+    brands = serializers.ListField(write_only=True)
+    WorkShopBrands = serializers.SerializerMethodField(read_only=True)
+    originName = serializers.CharField(source='origin.name', read_only=True)
+
+    class Meta:
+        model = WorkShop
+        fields = ['workshopOwnerId', 'brands', 'WorkShopBrands', 'originName', 'origin',  'locationId',
+                  'workshopName', 'currentCars', 'contactNumber', 'specialistName', 'avatar']
+
+    def create(self, validated_data):
+        brands_data = validated_data.pop('brands', [])  # Extract brands data
+
+        workshop = WorkShop.objects.create(**validated_data)
+        print('brands_data', brands_data)
+        print(type(brands_data))
+        for brand_string in brands_data[0].split(','):
+            print(brand_string)
+            shopBrands = workshopBrandsSerializer(
+                data={'workshop': workshop.pk, 'brands': brand_string})
+            shopBrands.is_valid(raise_exception=True)
+            shopBrands.save()
+
+        return workshop
+
+    def get_WorkShopBrands(self, obj):
+        print(obj)
+        print(obj.pk)
+        Brand = workshopBrands.objects.filter(workshop_id=obj.pk)
+        return Brand.values_list("brands__name", flat=True)
+
+
+class WorkShopImageSerializer (serializers.ModelSerializer):
+    WorkShopInfo = WorkShopSerializer(source='WorkShop', read_only=True)
+    # def create(self, validated_data):
+    #     WorkShop_id = self.context['WorkShop_id']
+    #     return WorkShopImages.objects.create(WorkShop_id=WorkShop_id, **validated_data)
+
+    class Meta:
+        model = WorkShopImages
+        fields = ['portfolio', 'WorkShop', 'WorkShopInfo']
+
+
+class RequestSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = Request
+        fields = ['workshopId', 'carsId',
+                  'userId', 'category', 'date', 'status']
+
+
 class CarsSerializer (serializers.ModelSerializer):
     class Meta:
         model = Cars
         fields = ['userId', 'carBrand', 'carModel',
-                  'carYear', 'carColor', 'plateNumber']
+                  'carYear', 'carColor', 'plateNumber', 'avatar']
 
 
 class productSerializer (serializers.ModelSerializer):
@@ -74,12 +127,6 @@ class TowRequestSerializer (serializers.ModelSerializer):
     class Meta:
         model = TowRequest
         fields = ['TowCarOwnerId']
-
-
-class OriginSerializer (serializers.ModelSerializer):
-    class Meta:
-        model = origin
-        fields = ['name']
 
 
 class checkupSerializer (serializers.ModelSerializer):
@@ -104,41 +151,4 @@ class TowCarOwnerSerializer (serializers.ModelSerializer):
     class Meta:
         car = serializers.CharField(source='Cars_model')
         model = TowCarOwner
-        fields = ['car',]
-
-    # class CarSerializer(serializers.ModelSerializer):
-    # user = UserCreateSerializer(source='user_id', read_only=True)
-    # images = serializers.SerializerMethodField(read_only=True)
-    # car_model = serializers.CharField(source='car_models', read_only=True)
-    # car_brand = serializers.CharField(source='car_models.brand_id.name', read_only=True)
-    # price = serializers.CharField(read_only=True)
-    # province_name = serializers.CharField(source='location.province_name', read_only=True)
-    # country_name = serializers.CharField(source='location.country_id.country_name', read_only=True)
-    # status = serializers.SerializerMethodField(read_only=True)
-
-    # class Meta:
-    #     model = models.Car
-    #     fields = [
-    #         'id', 'user_id', 'user', 'mileage', 'color', 'type', 'manufacturing_year', 'clean_title', 'engine_type',
-    #         'gear_type', 'cylinders', 'notes', 'price', 'location', 'province_name', 'country_name', 'car_model',
-    #         'car_models', 'car_brand', 'engine_capacity', 'damage', 'drive_type', 'images', 'status']
-
-    # def get_images(self, obj):
-    #     query = models.Media.objects.filter(car_id=obj.pk).values_list('image_id__image', flat=True)
-
-    #     data = []
-
-    #     current_site = get_current_site(self.context['request'])
-    #     for image_id__image in query:
-    #         print(image_id__image)
-    #         absolute_url = settings.MEDIA_URL + str(image_id__image)
-    #         data.append('http://'+current_site.domain+absolute_url)
-
-    #     return data
-
-    # def get_status(self, obj):
-    #     query = models.CarInAuction.objects.filter(car_id=obj.pk, status='sold')
-    #     if query.exists():
-    #         return 'sold'
-    #     else:
-    #         return 'for sale'
+        fields = ['user_id']
