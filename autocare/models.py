@@ -8,7 +8,6 @@ class User(AbstractUser):
     # userName = models.CharField(max_length=255, null=True)
     fullName = models.CharField(
         max_length=255,   unique=True)
-    password = models.CharField(max_length=255)
     phoneNumber = models.CharField(max_length=255, unique=True)
     email = models.CharField(max_length=255, unique=True)
     age = models.DateField(blank=True, null=True)
@@ -16,27 +15,28 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'phoneNumber'
 
-    # REQUIRED_FIELDS = ['fullName', 'password',
-    #                    'email', 'age', 'avatar']
+    REQUIRED_FIELDS = ['fullName',
+                       'email', 'age', 'avatar']
 
     def __str__(self):
         return self.username
-
-
-class product(models.Model):
-    productName = models.CharField(max_length=255)
-    category = models.CharField(max_length=255)
-    description = models.CharField(max_length=255)
-    code = models.CharField(max_length=255)
-    price = models.DecimalField(max_digits=20, decimal_places=5)
-    productImage = models.CharField(max_length=255)
 
 
 class PartSupplier(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.username
+        return self.user_id.username
+
+
+class product(models.Model):
+    supplierId = models.ForeignKey(PartSupplier, on_delete=models.DO_NOTHING)
+    productName = models.CharField(max_length=255)
+    category = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
+    code = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=20, decimal_places=5)
+    productImage = models.CharField(max_length=255)
 
 
 class ProductPartSupplier(models.Model):
@@ -48,7 +48,7 @@ class TowCarOwner(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.username
+        return self.user_id.username
 
 
 class WorkShopOwner(models.Model):
@@ -128,12 +128,12 @@ class WorkShopImages(models.Model):
 
 
 class CarOwner(models.Model):
-    user_Cars = models.OneToOneField(User, on_delete=models.CASCADE)
+    user_id = models.OneToOneField(User, on_delete=models.CASCADE)
     favorite = models.ManyToManyField(
         WorkShop, related_name='favorite', blank=True)
 
     def __str__(self):
-        return self.user_Cars.username
+        return self.user_id.username
 
 
 class Request(models.Model):

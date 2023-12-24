@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import WorkShop, workshopBrands, Specialist, Request, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
 import json
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.hashers import make_password
 
 
 class UserSerializer (serializers.ModelSerializer):
@@ -8,7 +10,27 @@ class UserSerializer (serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['fullName', 'username',
-                  'phoneNumber', 'email', 'age',  'avatar']
+                  'phoneNumber', 'email', 'age',  'avatar', 'password']
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    # @classmethod
+    # def get_token(cls, user):
+    #     token = super().get_token(user)
+
+    #     # Add custom claims
+    #     token['is_hr'] = user.is_hr
+    #     token['username'] = user.username
+    #     # ...
+
+    #     return token
+    print('aaaaa')
+
+    def hashPassword(password: str) -> str:
+        print('111')
+        if not password == None:
+            return make_password(password)
+        return None
 
 
 class UserImageSerializer(serializers.ModelSerializer):
@@ -20,25 +42,27 @@ class UserImageSerializer(serializers.ModelSerializer):
 
 
 class CarOwnerSerializer (serializers.ModelSerializer):
-    userCars = UserSerializer(source='user_Cars', read_only=True)
+    user = UserSerializer(source='user_id', read_only=True)
 
     class Meta:
         model = CarOwner
-        fields = ['user_Cars', 'userCars']
+        fields = ['user_id', 'user']
 
 
 class PartSupplierSerializer (serializers.ModelSerializer):
+    user = UserSerializer(source='user_id', read_only=True)
+
     class Meta:
         model = PartSupplier
-        fields = ['user_id', 'productId']
+        fields = ['user_id', 'user']
 
 
 class WorkShopOwnerSerializer (serializers.ModelSerializer):
-    user = UserSerializer(source='user_id')
+    user = UserSerializer(source='user_id', read_only=True)
 
     class Meta:
         model = WorkShopOwner
-        fields = ['user']
+        fields = ['user_id', 'user']
 
 
 class BrandSerializer (serializers.ModelSerializer):
@@ -69,15 +93,13 @@ class WorkShopSerializer (serializers.ModelSerializer):
     brands = serializers.ListField(write_only=True)
     WorkShopBrands = serializers.SerializerMethodField(read_only=True)
     originName = serializers.CharField(source='origin.name', read_only=True)
-    workshopOwnerId = serializers.CharField(
-        source='workshopOwnerId.user_id.username')
-    # specialistName = serializers.CharField(source='Specialist.name')
-    specialist = serializers.CharField(source='specialistName.name')
+    # workshopOwnerId = serializers.CharField(
+    #     source='workshopOwnerId.user_id.username')
 
     class Meta:
         model = WorkShop
         fields = ['workshopOwnerId', 'brands', 'WorkShopBrands', 'originName', 'origin',  'locationId',
-                  'workshopName', 'currentCars', 'contactNumber', 'specialist', 'specialistName', 'avatar']
+                  'workshopName', 'currentCars', 'contactNumber',   'specialistName', 'avatar']
 
     def create(self, validated_data):
         brands_data = validated_data.pop('brands', [])  # Extract brands data
@@ -129,7 +151,7 @@ class CarsSerializer (serializers.ModelSerializer):
 class productSerializer (serializers.ModelSerializer):
     class Meta:
         model = product
-        fields = ['productName', 'category',
+        fields = ['supplierId', 'productName', 'category',
                   'description', 'code', 'price', 'productImage']
 
 
@@ -158,7 +180,9 @@ class maintenanceSerializer (serializers.ModelSerializer):
 
 
 class TowCarOwnerSerializer (serializers.ModelSerializer):
+    user = UserSerializer(source='user_id', read_only=True)
+
     class Meta:
         car = serializers.CharField(source='Cars_model')
         model = TowCarOwner
-        fields = ['user_id']
+        fields = ['user_id', 'user']
