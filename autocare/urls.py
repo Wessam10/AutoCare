@@ -30,5 +30,6 @@ urlpatterns = [
     path('profile', views.userImagesViewSet.as_view()),
     # path('add', views.add)
     path('userType', views.userType),
+    path('GetSpecialists', views.GetSpecialist),
     # path('AddSpecialist', views.AddSpecialist)
 ]

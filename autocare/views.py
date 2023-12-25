@@ -361,14 +361,21 @@ class locationsViewSet(ModelViewSet):
 @api_view(['GET'])
 def userType(request):
     type = {"type": ['Workshop Owner', 'Car Owner',
-                     'Part Supplier', 'Tow Car Owner']}
+                     'Parts Supplier', 'Tow Car Owner']}
+    return Response(type)
+
+
+@api_view(['GET'])
+def GetSpecialist(request):
+    type = {"specialists": ['Motor', 'Electric',
+                            'Body', 'Suspension']}
     return Response(type)
 
 
 @api_view(['POST'])
 def AddSpecialist(request):
     specialist_type = [
-        "Motor",
+        "Motor",  # path('AddSpecialist', views.AddSpecialist)
         "Electric",
         "Body",
         "Suspension",
