@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WorkShop, workshopBrands, Specialist, Request, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
+from .models import WorkShop, workshopBrands, TowCar, Specialist, Request, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.hashers import make_password
@@ -10,27 +10,14 @@ class UserSerializer (serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['fullName', 'username',
-                  'phoneNumber', 'email', 'age',  'avatar', 'password']
+                  'phoneNumber', 'email', 'age',  'avatar', 'password', 'user_type']
 
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    # @classmethod
-    # def get_token(cls, user):
-    #     token = super().get_token(user)
-
-    #     # Add custom claims
-    #     token['is_hr'] = user.is_hr
-    #     token['username'] = user.username
-    #     # ...
-
-    #     return token
-    print('aaaaa')
-
-    def hashPassword(password: str) -> str:
-        print('111')
-        if not password == None:
-            return make_password(password)
-        return None
+# class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+#     @classmethod
+#     def get_token(cls, user):
+#         token = super().get_token(user)
+#         token['user_type'] = user.user_type
 
 
 class UserImageSerializer(serializers.ModelSerializer):
@@ -66,9 +53,11 @@ class WorkShopOwnerSerializer (serializers.ModelSerializer):
 
 
 class BrandSerializer (serializers.ModelSerializer):
+    originName = serializers.CharField(source='origin.name', read_only=True)
+
     class Meta:
         model = Brand
-        fields = ['origin', 'name']
+        fields = ['origin',  'originName', 'id', 'name']
 
 
 class workshopBrandsSerializer (serializers.ModelSerializer):
@@ -186,3 +175,11 @@ class TowCarOwnerSerializer (serializers.ModelSerializer):
         car = serializers.CharField(source='Cars_model')
         model = TowCarOwner
         fields = ['user_id', 'user']
+
+
+class TowCarSerializer(serializers.ModelSerializer):
+    carId = CarsSerializer(source='car_id', read_only=True)
+
+    class Meta:
+        model = TowCar
+        fields = ['car_id', 'carId', 'coverageCity']

@@ -159,7 +159,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
     'ACCESS_TOKEN_LIFETIME': timedelta(days=100),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=100),
-    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.MyTokenObtainPairSerializer",
+    # "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.MyTokenObtainPairSerializer",
 }
 # SIMPLE_JWT = {
 #     'AUTH_HEADER_TYPES': ('JWT',),

@@ -21,6 +21,7 @@
     "lattakia",
     "simplejwt",
     "timedelta",
+    "usertype",
     "viewsets"
   ]
 }

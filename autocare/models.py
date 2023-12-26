@@ -12,11 +12,12 @@ class User(AbstractUser):
     email = models.CharField(max_length=255, unique=True)
     age = models.DateField(blank=True, null=True)
     avatar = models.ImageField(upload_to='autocare/images', null=True)
+    user_type = models.CharField(max_length=30)
 
     USERNAME_FIELD = 'phoneNumber'
 
     REQUIRED_FIELDS = ['fullName',
-                       'email', 'age', 'avatar']
+                       'email', 'age', 'avatar', 'user_type']
 
     def __str__(self):
         return self.username
@@ -162,3 +163,15 @@ class checkup (models.Model):
 class workshopBrands (models.Model):
     brands = models.ForeignKey(Brand, on_delete=models.CASCADE)
     workshop = models.ForeignKey(WorkShop, on_delete=models.CASCADE)
+
+
+class City (models.Model):
+    name = models.CharField(max_length=30)
+
+    def __str__(self):
+        return self.name
+
+
+class TowCar (models.Model):
+    car_id = models.ForeignKey(Cars, on_delete=models.CASCADE)
+    coverageCity = models.ForeignKey(City, on_delete=models.DO_NOTHING)

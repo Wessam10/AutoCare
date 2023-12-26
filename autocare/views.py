@@ -1,23 +1,29 @@
-from django.shortcuts import render
-from rest_framework .viewsets import ModelViewSet, generics
-from django.shortcuts import get_object_or_404
-from .models import User, WorkShopImages, CarOwner, PartSupplier, TowCarOwner, WorkShopOwner, product, TowRequest, origin, Brand, location, Cars, WorkShop, Request, maintenance, checkup, Specialist
-from .Serializer import MyTokenObtainPairSerializer, WorkShopSerializer,  WorkShopImageSerializer, UserImageSerializer, RequestSerializer, BrandSerializer, CarOwnerSerializer, CarsSerializer, checkupSerializer, locationSerializer, maintenanceSerializer, OriginSerializer, PartSupplierSerializer, productSerializer, TowCarOwnerSerializer, TowRequestSerializer, WorkShopOwnerSerializer, UserSerializer
-from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import viewsets
-from rest_framework.decorators import api_view
-from . import models
-from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.hashers import make_password
+from django.shortcuts import get_object_or_404, render
+from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
+from rest_framework import status, viewsets
+from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, generics
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from . import models
+from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
+                     TowCarOwner, TowRequest, User, WorkShop, WorkShopImages,
+                     WorkShopOwner, checkup, location, maintenance, origin, City,
+                     product, TowCar)
 from .permission import CarOwnerAuth, workshopOwnerAuth
+from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
+                         OriginSerializer, PartSupplierSerializer,
+                         RequestSerializer, TowCarOwnerSerializer,
+                         TowRequestSerializer, UserImageSerializer,
+                         UserSerializer, WorkShopImageSerializer,
+                         WorkShopOwnerSerializer, WorkShopSerializer,
+                         checkupSerializer, locationSerializer,
+                         maintenanceSerializer, productSerializer, TowCarSerializer,)
+
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
-
-
-class MyTokenObtainPairView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairSerializer
 
 
 def responseData(data: dict, status: bool, message: str):
@@ -25,12 +31,58 @@ def responseData(data: dict, status: bool, message: str):
     return response
 
 
+class MyTokenObtainPairView(TokenObtainPairView):
+    # serializer_class = MyTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        print("aaaaaaaaaaa11111aaaaaaaaaaa")
+        if serializer.is_valid():
+            user = serializer.user
+            print('b')
+            tokens = serializer.validated_data
+            print('Serializer is_valid:', serializer.is_valid())
+
+            response_data = {
+                'data': {
+                    'access': tokens['access'],
+                    'refresh': tokens['refresh'],
+                    'user_type': user.user_type
+                },
+                'status': True,
+                'message': 'Login successful.'
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        response_data = {
+            'status': 'error',
+            'message': 'Invalid credentials.',
+            'status': False,
+        }
+        return Response(response_data, status=status.HTTP_401_UNAUTHORIZED)
+
+    # @classmethod
+    # def get_token(cls, user):
+    #     token = super().get_token(user)
+    #     if hasattr(user, 'PartSupplier'):
+    #         print('token')
+    #         token['usertype'] = User.PartSupplier.user_type
+    #     elif hasattr(user, 'TowCarOwner'):
+    #         token['usertype'] = User.TowCarOwner.user_type
+    #     elif hasattr(user, 'WorkShopOwner'):
+    #         token['usertype'] = User.WorkShopOwner.user_type
+    #     elif hasattr(user, 'CarOwner'):
+    #         token['usertype'] = User.CarOwner.user_type
+
+    #     return token
+
+
 class WorkShopViewSet (ModelViewSet):
     queryset = WorkShop.objects.all().order_by('pk')
     serializer_class = WorkShopSerializer
     # permission_classes = [IsAuthenticated, workshopOwnerAuth]
     filter_backends = [DjangoFilterBackend]
-    filter_fields = ['origin']
+    filterset_fields = ['origin']
 
     def create(self, request, *args, **kwargs):
         print('wwww')
@@ -56,7 +108,9 @@ class RequestViewSet (ModelViewSet):
 class BrandViewSet (ModelViewSet):
     queryset = Brand.objects.all().order_by('pk')
     serializer_class = BrandSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['origin']
 
 
 class CarOwnerViewSet (ModelViewSet):
@@ -77,6 +131,7 @@ class CarOwnerViewSet (ModelViewSet):
         # Update the request data with the hashed password
         request.data['password'] = hashed_password
         userInfo = {}
+        userInfo["user_type"] = "Car Owner"
         for user_data in request_data:
             print(user_data)
             userInfo[user_data] = request_data.get(user_data, None)
@@ -137,6 +192,7 @@ class PartSupplierViewSet (ModelViewSet):
         # Update the request data with the hashed password
         request.data['password'] = hashed_password
         userInfo = {}
+        userInfo["user_type"] = "Parts Supplier"
         for user_data in request_data:
             print(user_data)
             userInfo[user_data] = request_data.get(user_data, None)
@@ -184,6 +240,7 @@ class TowCarOwnerViewSet (ModelViewSet):
         # Update the request data with the hashed password
         request.data['password'] = hashed_password
         user_info = {}
+        user_info["user_type"] = "Tow Car Owner"
         for user_data in request_data:
             print(user_data)
             user_info[user_data] = request_data.get(user_data, None)
@@ -232,6 +289,7 @@ class WorkShopOwnerViewSet (ModelViewSet):
         # Update the request data with the hashed password
         request.data['password'] = hashed_password
         user_info = {}
+        user_info["user_type"] = "Work Shop Owner"
         for user_data in request_data:
             print(user_data)
             user_info[user_data] = request_data.get(user_data, None)
@@ -304,6 +362,29 @@ class favoriteViewSet (ModelViewSet):
     serializer_class = CarOwnerSerializer
 
 
+class TowCarViewSet(ModelViewSet):
+    queryset = TowCar.objects.filter()
+    serializer_class = TowCarSerializer
+
+    def create(self, request, *args, **kwargs):
+        request.data._mutable = True
+        request_data = request.data
+        user = request.user.pk
+        request.data["userId"] = user
+        towCar_info = {}
+        for user_data in request_data:
+            print(user_data)
+            towCar_info[user_data] = request_data.get(user_data, None)
+        print(towCar_info)
+        car = CarsSerializer(data=towCar_info)
+        car.is_valid(raise_exception=True)
+        workshopUser = car.save()
+        print(workshopUser)
+        request_data["car_id"] = workshopUser.pk
+
+        return super().create(request, *args, **kwargs)
+
+
 def post(request, product_id):
 
     WorkShop = get_object_or_404(WorkShop, pk=id)
@@ -343,11 +424,22 @@ def add(request):
         "Gumpert",
         "Ruf Automobile",
         "Brabus"
-    ]
+    ],
+        "USA": [
+        "Ford",
+        "Dodge",
+        "GMC",
+        "Jeep",
+        "TESLA",
+        "CHRYSLER",
+        "CHEVROLET",
+        "POLARIS",
+        "Cadillac",]
+
     }
 
-    for i in cars['Germany']:
-        ori = Brand(name=i, origin=origin.objects.get())
+    for i in cars['USA']:
+        ori = Brand(name=i, origin=origin.objects.get(name='USA'))
         print(ori)
         ori.save()
     return Response()
@@ -384,6 +476,50 @@ def AddSpecialist(request):
 
     for i in specialist_type:
         ori = Specialist(name=i)
+        print(ori)
+        ori.save()
+    return Response()
+
+
+@api_view(['POST'])
+def AddOrigin(request):
+    origin_type = [
+        "Japan",
+        "USA",
+        "UK",
+        "Italy",
+        "Spain",
+        "South Korea",
+        "China",
+        "Iran"
+    ]
+
+    for i in origin_type:
+        ori = origin(name=i)
+        print(ori)
+        ori.save()
+    return Response()
+
+
+@api_view(['POST'])
+def AddCity(request):
+    origin_type = [
+        "Aleppo",
+        "Lattakia",
+        "Homs",
+        "Hama",
+        "Tartus",
+        "Daraa",
+        "Rif Dimashq",
+        "Daraa",
+        "Quneitra",
+        "Raqqa",
+        "Damascus ",
+
+    ]
+
+    for i in origin_type:
+        ori = City(name=i)
         print(ori)
         ori.save()
     return Response()
