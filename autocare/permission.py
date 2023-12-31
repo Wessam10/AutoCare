@@ -31,3 +31,23 @@ class workshopOwnerAuth(BasePermission):
             print("aaaaaaaaa")
             return True
         return False
+
+
+class PartSupplierAuth(BasePermission):
+    def has_permission(self, request, view):
+        print(request.user.pk)
+        user = request.user.pk
+        if PartSupplier.objects.filter(user_id=user).exists():
+            print("aaaaaaaaa")
+            return True
+        return False
+
+
+class TowCarOwnerAuth(BasePermission):
+    def has_permission(self, request, view):
+        print(request.user.pk)
+        user = request.user.pk
+        if TowCarOwner.objects.filter(user_id=user).exists():
+            print("aaaaaaaaa")
+            return True
+        return False

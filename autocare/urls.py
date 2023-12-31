@@ -22,6 +22,8 @@ routers.register('CreateUser', views.UserViewSet)
 routers.register('CreateTowCarOwner', views.TowCarOwnerViewSet)
 routers.register('CreateWorkShopOwner', views.WorkShopOwnerViewSet)
 routers.register('ManageWorkShopImages', views.WorkShopImagesViewSet)
+routers.register('ManageOrigin_Brand', views.Origin_BrandViewSet)
+routers.register('GetSpecialists', views.SpecialistViewSet)
 
 
 routers.urls
@@ -31,7 +33,6 @@ urlpatterns = [
     path('profile', views.userImagesViewSet.as_view()),
     # path('add', views.add),
     path('userType', views.userType),
-    path('GetSpecialists', views.GetSpecialist),
     # path('AddSpecialist', views.AddSpecialist)
     # path('AddOrigin', views.AddOrigin),
     path('AddCity', views.AddCity),

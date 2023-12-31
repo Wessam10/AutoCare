@@ -1,16 +1,17 @@
 from rest_framework import serializers
-from .models import WorkShop, workshopBrands, TowCar, Specialist, Request, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
+from .models import WorkShop, workshopBrands, TowCar, Specialist, Request, Specialist, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.hashers import make_password
+import hashlib
 
 
 class UserSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['fullName', 'username',
-                  'phoneNumber', 'email', 'age',  'avatar', 'password', 'user_type']
+        fields = ['fullName',
+                  'phoneNumber', 'email', 'avatar', 'password', 'user_type']
 
 
 # class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -87,7 +88,7 @@ class WorkShopSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = WorkShop
-        fields = ['workshopOwnerId', 'brands', 'WorkShopBrands', 'originName', 'origin',  'locationId',
+        fields = ['workshopOwnerId', 'brands', 'WorkShopBrands', 'originName', 'origin',  'locationId', 'address',
                   'workshopName', 'currentCars', 'contactNumber',   'specialistName', 'avatar']
 
     def create(self, validated_data):
@@ -138,10 +139,52 @@ class CarsSerializer (serializers.ModelSerializer):
 
 
 class productSerializer (serializers.ModelSerializer):
+    productCode = serializers.CharField(source='code', read_only=True)
+
     class Meta:
         model = product
-        fields = ['supplierId', 'productName', 'category',
-                  'description', 'code', 'price', 'productImage']
+        fields = ['productName', 'category',
+                  'description', 'productCode', 'productImage']
+
+    def create(self, validated_data):
+        Id = product.objects.all().last().pk
+        name = validated_data.get(
+            'productName', [])  # Extract brands data
+        print(Id)
+        data = str(Id+1) + name
+        print(data)
+
+        # Hash the data using MD5
+        hashed_data = hashlib.shake_128(data.encode()).hexdigest(2)
+        print(hashed_data)
+
+        # Truncate the hashed data to 5 characters
+
+        print(hashed_data)
+        validated_data['code'] = hashed_data
+
+        return super().create(validated_data)
+        # def create(self, validated_data):
+    #     print(validated_data)
+    #     name = validated_data.get(
+    #         'productName', [])  # Extract brands data
+    #     Id = validated_data.get(
+    #         'id', [])  # Extract brands data
+    #     print('aaaa')
+
+    #     data = name + str(Id)
+
+    #     # Hash the data using MD5
+    #     hashed_data = hashlib.md5(data.encode()).hexdigest()
+
+    #     # Truncate the hashed data to 5 characters
+    #     truncated_data = hashed_data[:5]
+    #     product = productSerializer(
+    #         data={'productCode': truncated_data})
+    #     product.is_valid(raise_exception=True)
+    #     product.save()
+
+    #     return
 
 
 class TowRequestSerializer (serializers.ModelSerializer):
@@ -183,3 +226,9 @@ class TowCarSerializer(serializers.ModelSerializer):
     class Meta:
         model = TowCar
         fields = ['car_id', 'carId', 'coverageCity']
+
+
+class specialistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Specialist
+        fields = ['id', 'name']

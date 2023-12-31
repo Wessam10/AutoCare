@@ -13,7 +13,7 @@ from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages,
                      WorkShopOwner, checkup, location, maintenance, origin, City,
                      product, TowCar)
-from .permission import CarOwnerAuth, workshopOwnerAuth
+from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
                          OriginSerializer, PartSupplierSerializer,
                          RequestSerializer, TowCarOwnerSerializer,
@@ -21,7 +21,8 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, TowCarSerializer,)
+                         maintenanceSerializer, productSerializer, TowCarSerializer, specialistSerializer)
+
 
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
 
@@ -210,7 +211,14 @@ class PartSupplierViewSet (ModelViewSet):
 class productViewSet (ModelViewSet):
     queryset = product.objects.all().order_by('pk')
     serializer_class = productSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        request.data._mutable = True
+        user = request.user.pk
+        request.data['user_id'] = user
+        print('abv')
+        return super().create(request, *args, **kwargs)
 
 
 class TowCarOwnerViewSet (ModelViewSet):
@@ -289,7 +297,7 @@ class WorkShopOwnerViewSet (ModelViewSet):
         # Update the request data with the hashed password
         request.data['password'] = hashed_password
         user_info = {}
-        user_info["user_type"] = "Work Shop Owner"
+        user_info["user_type"] = "Workshop Owner"
         for user_data in request_data:
             print(user_data)
             user_info[user_data] = request_data.get(user_data, None)
@@ -385,6 +393,30 @@ class TowCarViewSet(ModelViewSet):
         return super().create(request, *args, **kwargs)
 
 
+class SpecialistViewSet (ModelViewSet):
+    queryset = Specialist.objects.all()
+    serializer_class = specialistSerializer
+
+
+class Origin_BrandViewSet (ModelViewSet):
+    queryset = Brand.objects.filter()
+    serializer_class = BrandSerializer
+
+    def list(self, request, *args, **kwargs):
+        data = {}
+        serializer = self.get_serializer(self.queryset, many=True)
+        origins = origin.objects.all()
+        for ori in origins:
+            origin_name = ori
+            brand_list = Brand.objects.filter(origin=ori)
+            if origin_name in data:
+                data[origin_name].append(brand_list)
+            else:
+                data[origin_name] = [brand_list]
+
+        return super().list(request, *args, **kwargs)
+
+
 def post(request, product_id):
 
     WorkShop = get_object_or_404(WorkShop, pk=id)
@@ -457,13 +489,6 @@ def userType(request):
     return Response(type)
 
 
-@api_view(['GET'])
-def GetSpecialist(request):
-    type = {"specialists": ['Motor', 'Electric',
-                            'Body', 'Suspension']}
-    return Response(type)
-
-
 @api_view(['POST'])
 def AddSpecialist(request):
     specialist_type = [
@@ -511,6 +536,30 @@ def AddCity(request):
         "Tartus",
         "Daraa",
         "Rif Dimashq",
+        "Daraa",
+        "Quneitra",
+        "Raqqa",
+        "Damascus ",
+
+    ]
+
+    for i in origin_type:
+        ori = City(name=i)
+        print(ori)
+        ori.save()
+    return Response()
+
+
+@api_view(['POST'])
+def AddProduct(request):
+    origin_type = [
+        "Front Light",
+        "Front Pumper",
+        "Back Pumper",
+        "Engine",
+        "Door",
+        "Gear Box",
+        "",
         "Daraa",
         "Quneitra",
         "Raqqa",
