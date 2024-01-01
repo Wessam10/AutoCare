@@ -1,5 +1,5 @@
 from django.contrib import admin
-from . models import User, origin, TowCarOwner, Brand, WorkShop, WorkShopOwner, location, CarOwner, product, PartSupplier, Cars, Specialist, workshopBrands, location, City, Request
+from . models import User, origin, TowCarOwner, Brand, WorkShop, WorkShopOwner, location, CarOwner, product, PartSupplier, ProductPartSupplier, Cars, Specialist, workshopBrands, location, City, Request
 
 admin.site.register(User)
 admin.site.register(origin)
@@ -16,4 +16,5 @@ admin.site.register(City)
 admin.site.register(product)
 admin.site.register(PartSupplier)
 admin.site.register(Request)
+admin.site.register(ProductPartSupplier)
 # Register your models here.

@@ -179,7 +179,8 @@ class product(models.Model):
 
 
 class ProductPartSupplier(models.Model):
-    partSupplierId = models.ForeignKey(PartSupplier, on_delete=models.CASCADE)
+    partSupplierId = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=True)
     productId = models.ForeignKey(product, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
     count = models.PositiveIntegerField()

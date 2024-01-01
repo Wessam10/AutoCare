@@ -24,6 +24,7 @@ routers.register('CreateWorkShopOwner', views.WorkShopOwnerViewSet)
 routers.register('ManageWorkShopImages', views.WorkShopImagesViewSet)
 routers.register('ManageOrigin_Brand', views.Origin_BrandViewSet)
 routers.register('GetSpecialists', views.SpecialistViewSet)
+routers.register('AssignProduct', views.ProductPartViewSet)
 
 
 routers.urls

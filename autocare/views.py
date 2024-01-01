@@ -11,7 +11,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages,
-                     WorkShopOwner, checkup, location, maintenance, origin, City,
+                     WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
                      product, TowCar)
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
@@ -21,7 +21,7 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, TowCarSerializer, specialistSerializer)
+                         maintenanceSerializer, productSerializer, TowCarSerializer, specialistSerializer, ProductPartSupplierSerializer)
 
 
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
@@ -365,11 +365,6 @@ class WorkShopImagesViewSet (ModelViewSet):
         return super().create(request, *args, **kwargs)
 
 
-class favoriteViewSet (ModelViewSet):
-    queryset = CarOwner.objects.filter()
-    serializer_class = CarOwnerSerializer
-
-
 class TowCarViewSet(ModelViewSet):
     queryset = TowCar.objects.filter()
     serializer_class = TowCarSerializer
@@ -417,20 +412,47 @@ class Origin_BrandViewSet (ModelViewSet):
         return super().list(request, *args, **kwargs)
 
 
-def post(request, product_id):
+class favoriteViewSet (ModelViewSet):
+    queryset = CarOwner.objects.filter()
+    serializer_class = CarOwnerSerializer
 
-    WorkShop = get_object_or_404(WorkShop, pk=id)
-    if WorkShop.favorite.filter(id=request.user.id).exist():
-        product.favorite.remove(request.user)
-    else:
-        product.favorite.add(request.user)
+    def post(request, product_id):
+
+        WorkShop = get_object_or_404(WorkShop, pk=id)
+        if WorkShop.favorite.filter(id=request.user.id).exist():
+            product.favorite.remove(request.user)
+        else:
+            product.favorite.add(request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        user = request.user_id
+        favorite = WorkShop.favorite.all()
+        serializer = self.get_serializer(favorite)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def retrieve(self, request, *args, **kwargs):
-    user = request.user_id
-    favorite = WorkShop.favorite.all()
-    serializer = self.get_serializer(favorite)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+class ProductPartViewSet (ModelViewSet):
+    queryset = ProductPartSupplier.objects.filter()
+    serializer_class = ProductPartSupplierSerializer
+    permission_classes = [IsAuthenticated, PartSupplierAuth]
+
+    def create(self, request, *args, **kwargs):
+        request.data._mutable = True
+        data = request.data
+        user = request.user.pk
+        print(user)
+        request.data['partSupplierId'] = user
+        product_info = {}
+        print('1')
+        for product_data in data:
+            print(product_data)
+            product_info[product_data] = data.get(product_data, None)
+        print(product_info)
+        product = ProductPartSupplierSerializer(data=product_info)
+        product.is_valid(raise_exception=True)
+        workshopUser = product.save()
+
+        return super().create(request, *args, **kwargs)
 
 
 @api_view(['GET', 'POST'])

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WorkShop, workshopBrands, TowCar, Specialist, Request, Specialist, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
+from .models import WorkShop, workshopBrands, TowCar, Specialist, ProductPartSupplier, Request, Specialist, Brand, CarOwner, Cars,  PartSupplier, product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.hashers import make_password
@@ -232,3 +232,11 @@ class specialistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Specialist
         fields = ['id', 'name']
+
+
+class ProductPartSupplierSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductPartSupplier
+        fields = ['partSupplierId',
+                  'productId', 'brand', 'count', 'price']
