@@ -167,10 +167,12 @@ class CarsViewSet (ModelViewSet):
     filterset_field = ['userId ']
 
     def create(self, request, *args, **kwargs):
+        print('aaaa')
         request.data._mutable = True
         user = request.user.pk
+        carOwner = CarOwner.objects.get(user_id=user)
         print(user)
-        request.data["userId"] = user
+        request.data["userId"] = carOwner.pk
         print('aaaa')
 
         return super().create(request, *args, **kwargs)
@@ -216,7 +218,8 @@ class productViewSet (ModelViewSet):
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         user = request.user.pk
-        request.data['user_id'] = user
+        partOwner = CarOwner.objects.get(user_id=user)
+        request.data['user_id'] = partOwner
         print('abv')
         return super().create(request, *args, **kwargs)
 
@@ -460,43 +463,44 @@ class ProductPartViewSet (ModelViewSet):
 
 @api_view(['GET', 'POST'])
 def add(request):
-    cars = {"Germany": [
-        "BMW",
-        "Mercedes-Benz",
-        "Audi",
-        "Volkswagen",
-        "Porsche",
-        "Opel",
-        "Mini",
-        "Smart",
-        "Maybach",
-        "Volkswagen (VW)",
-        "Porsche",
-        "Audi",
-        "BMW",
-        "Mercedes-AMG",
-        "MAN",
-        "Wiesmann",
-        "Borgward",
-        "Gumpert",
-        "Ruf Automobile",
-        "Brabus"
-    ],
+    cars = {
+        "Germany": [
+            "BMW",
+            "Mercedes-Benz",
+            "Audi",
+            "Volkswagen",
+            "Porsche",
+            "Opel",
+            "Mini",
+            "Smart",
+            "Maybach",
+            "Volkswagen (VW)",
+            "Porsche",
+            "Audi",
+            "BMW",
+            "Mercedes-AMG",
+            "MAN",
+            "Wiesmann",
+            "Borgward",
+            "Gumpert",
+            "Ruf Automobile",
+            "Brabus"
+        ],
         "USA": [
-        "Ford",
-        "Dodge",
-        "GMC",
-        "Jeep",
-        "TESLA",
-        "CHRYSLER",
-        "CHEVROLET",
-        "POLARIS",
-        "Cadillac",]
+            "Ford",
+            "Dodge",
+            "GMC",
+            "Jeep",
+            "TESLA",
+            "CHRYSLER",
+            "CHEVROLET",
+            "POLARIS",
+            "Cadillac",]
 
     }
 
-    for i in cars['USA']:
-        ori = Brand(name=i, origin=origin.objects.get(name='USA'))
+    for i in cars["Germany"]:
+        ori = Brand(name=i, origin=origin.objects.get(name='Germany'))
         print(ori)
         ori.save()
     return Response()

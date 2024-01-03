@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
-    username = models.CharField(max_length=255, null=True, unique=False)
+    username = models.CharField(max_length=255, null=True, unique=True)
     fullName = models.CharField(
         max_length=255,   unique=True)
     phoneNumber = models.CharField(max_length=255, unique=True)
@@ -27,21 +27,21 @@ class PartSupplier(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.user_id.username
+        return self.user_id.fullName
 
 
 class TowCarOwner(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.user_id.username
+        return self.user_id.fullName
 
 
 class WorkShopOwner(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.user_id.username
+        return self.user_id.fullName
 
 
 class origin(models.Model):
@@ -64,19 +64,6 @@ class location(models.Model):
 
     def __str__(self):
         return self.longlat
-
-
-class Cars(models.Model):
-    userId = models.ForeignKey(User, on_delete=models.CASCADE)
-    carBrand = models.ForeignKey(Brand, on_delete=models.CASCADE)
-    carModel = models.CharField(max_length=255)
-    carYear = models.CharField(max_length=255)
-    carColor = models.CharField(max_length=255)
-    plateNumber = models.CharField(max_length=255)
-    avatar = models.ImageField(upload_to='autocare/images', null=True)
-
-    def __str__(self):
-        return self.carBrand.name
 
 
 class Specialist(models.Model):
@@ -104,19 +91,35 @@ class WorkShop(models.Model):
         return self.workshopName
 
 
-class WorkShopImages(models.Model):
-    WorkShop = models.ForeignKey(WorkShop, on_delete=models.CASCADE)
-    portfolio = models.ImageField(
-        upload_to='autocare/workshop/images', null=True)
-
-
 class CarOwner(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
     favorite = models.ManyToManyField(
         WorkShop, related_name='favorite', blank=True)
 
     def __str__(self):
-        return self.user_id.username
+        return self.user_id.fullName
+
+
+class Cars(models.Model):
+    userId = models.ForeignKey(CarOwner, on_delete=models.CASCADE)
+    carBrand = models.ForeignKey(Brand, on_delete=models.CASCADE)
+    carModel = models.CharField(max_length=255)
+    carYear = models.CharField(max_length=255)
+    carColor = models.CharField(max_length=255)
+    plateNumber = models.CharField(max_length=255)
+    avatar = models.ImageField(upload_to='autocare/images', null=True)
+
+    def __str__(self):
+        if self.carBrand:
+            return str(self.carBrand.name)
+        else:
+            return "No brand specified"
+
+
+class WorkShopImages(models.Model):
+    WorkShop = models.ForeignKey(WorkShop, on_delete=models.CASCADE)
+    portfolio = models.ImageField(
+        upload_to='autocare/workshop/images', null=True)
 
 
 class Request(models.Model):
@@ -161,6 +164,8 @@ class City (models.Model):
 
 
 class TowCar (models.Model):
+    userId = models.ForeignKey(
+        TowCarOwner, on_delete=models.CASCADE)
     car_id = models.ForeignKey(Cars, on_delete=models.CASCADE)
     coverageCity = models.ForeignKey(City, on_delete=models.DO_NOTHING)
 
@@ -180,7 +185,7 @@ class product(models.Model):
 
 class ProductPartSupplier(models.Model):
     partSupplierId = models.ForeignKey(
-        User, on_delete=models.CASCADE)
+        PartSupplier, on_delete=models.CASCADE)
     productId = models.ForeignKey(product, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
     count = models.PositiveIntegerField()

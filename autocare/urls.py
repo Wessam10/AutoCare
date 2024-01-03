@@ -32,10 +32,10 @@ urlpatterns = [
     path('login', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('', include(routers.urls)),
     path('profile', views.userImagesViewSet.as_view()),
-    # path('add', views.add),
+    path('add', views.add),
     path('userType', views.userType),
-    # path('AddSpecialist', views.AddSpecialist)
-    # path('AddOrigin', views.AddOrigin),
+    path('AddSpecialist', views.AddSpecialist),
+    path('AddOrigin', views.AddOrigin),
     path('AddCity', views.AddCity),
     path('AddProduct', views.AddProduct),
 ]

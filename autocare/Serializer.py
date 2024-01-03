@@ -225,7 +225,7 @@ class TowCarSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TowCar
-        fields = ['car_id', 'carId', 'coverageCity']
+        fields = ['userId', 'car_id', 'carId', 'coverageCity']
 
 
 class specialistSerializer(serializers.ModelSerializer):
