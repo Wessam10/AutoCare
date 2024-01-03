@@ -276,7 +276,6 @@ class UserViewSet (ModelViewSet):
 class WorkShopOwnerViewSet (ModelViewSet):
     queryset = WorkShopOwner.objects.all().order_by('pk')
     serializer_class = WorkShopOwnerSerializer
-    # permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
         print('user')
@@ -435,6 +434,10 @@ class ProductPartViewSet (ModelViewSet):
     queryset = ProductPartSupplier.objects.filter()
     serializer_class = ProductPartSupplierSerializer
     permission_classes = [IsAuthenticated, PartSupplierAuth]
+    # for brand_string in brands_data[0].split(','):
+    #     print(brand_string)
+    #     shopBrands = workshopBrandsSerializer(
+    #         data={'workshop': workshop.pk, 'brands': brand_string})
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
@@ -581,16 +584,32 @@ def AddProduct(request):
         "Engine",
         "Door",
         "Gear Box",
-        "",
-        "Daraa",
-        "Quneitra",
-        "Raqqa",
-        "Damascus ",
+        "Transmission",
+        "Brakes",
+        "Suspension system",
+        "Exhaust system",
+        "Fuel system",
+        "Electrical system",
+        "Battery",
+        "Radiator",
+        "Alternator",
+        "Ignition system",
+        "Steering system",
+        "Drive shaft",
+        "Axles",
+        "Wheels",
+        "Tires",
+        "Belts",
+        "Hoses",
+        "Filters (air)"
+        "Filters (oil)"
+        "Filters (fuel)"
+
 
     ]
 
     for i in origin_type:
-        ori = City(name=i)
+        ori = product(productName=i)
         print(ori)
         ori.save()
     return Response()

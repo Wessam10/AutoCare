@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
-    # userName = models.CharField(max_length=255, null=True)
+    username = models.CharField(max_length=255, null=True, unique=False)
     fullName = models.CharField(
         max_length=255,   unique=True)
     phoneNumber = models.CharField(max_length=255, unique=True)
@@ -180,7 +180,7 @@ class product(models.Model):
 
 class ProductPartSupplier(models.Model):
     partSupplierId = models.ForeignKey(
-        User, on_delete=models.CASCADE, null=True)
+        User, on_delete=models.CASCADE)
     productId = models.ForeignKey(product, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
     count = models.PositiveIntegerField()

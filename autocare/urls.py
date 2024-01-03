@@ -37,4 +37,5 @@ urlpatterns = [
     # path('AddSpecialist', views.AddSpecialist)
     # path('AddOrigin', views.AddOrigin),
     path('AddCity', views.AddCity),
+    path('AddProduct', views.AddProduct),
 ]
