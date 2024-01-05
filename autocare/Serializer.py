@@ -14,11 +14,12 @@ class UserSerializer (serializers.ModelSerializer):
                   'phoneNumber', 'email', 'avatar', 'password', 'user_type']
 
 
-# class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-#     @classmethod
-#     def get_token(cls, user):
-#         token = super().get_token(user)
-#         token['user_type'] = user.user_type
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['user_type'] = user.user_type
+        return token
 
 
 class UserImageSerializer(serializers.ModelSerializer):

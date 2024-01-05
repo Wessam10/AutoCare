@@ -7,6 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, generics
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
@@ -21,9 +23,7 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, TowCarSerializer, specialistSerializer, ProductPartSupplierSerializer)
-
-
+                         maintenanceSerializer, productSerializer, TowCarSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
 
 
@@ -310,7 +310,24 @@ class WorkShopOwnerViewSet (ModelViewSet):
         print(workshopUser)
         request_data["user_id"] = workshopUser.pk
         print('done')
-        return super().create(request, *args, **kwargs)
+        us = User.objects.get(id=workshopUser.pk)
+        token_serializer = MyTokenObtainPairSerializer()
+        token = token_serializer.get_token(us)
+        print(MyTokenObtainPairSerializer)
+        print(us)
+        print(token)
+        # Include the token in the response data
+        response_data = {
+            'token': str(token.access_token),
+
+            'user': workshopUser.pk,
+
+
+            'user_info': user_info
+        }
+
+        # Return the response
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 class OriginViewSet (ModelViewSet):
@@ -446,6 +463,7 @@ class ProductPartViewSet (ModelViewSet):
         request.data._mutable = True
         data = request.data.pk
         user = request.user.pk
+        pro = product.object.get(id=data)
         print(user)
         request.data['partSupplierId'] = user
         product_info = {}
