@@ -444,7 +444,7 @@ class ProductPartViewSet (ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
-        data = request.data
+        data = request.data.pk
         user = request.user.pk
         print(user)
         request.data['partSupplierId'] = user
