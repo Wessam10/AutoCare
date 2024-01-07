@@ -260,8 +260,27 @@ class TowCarOwnerViewSet (ModelViewSet):
         user.is_valid(raise_exception=True)
         workshopUser = user.save()
         request_data["user_id"] = workshopUser.pk
+        us = User.objects.get(id=workshopUser.pk)
+        token_serializer = MyTokenObtainPairSerializer()
+        token = token_serializer.get_token(us)
+        print(MyTokenObtainPairSerializer)
+        print(us)
+        print(token)
+        # Include the token in the response data
+        response_data = {
+            'access': str(token.access_token),
+            'refresh': str(token),
+
+            'user': workshopUser.pk,
+
+
+            'user_info': user_info
+        }
+
+        # Return the response
+        return Response(response_data, status=status.HTTP_201_CREATED)
         print('aaaa')
-        return super().create(request, *args, **kwargs)
+        # return super().create(request, *args, **kwargs)
 
 
 class TowRequestViewSet (ModelViewSet):
