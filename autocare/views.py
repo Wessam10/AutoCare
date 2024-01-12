@@ -206,6 +206,28 @@ class PartSupplierViewSet (ModelViewSet):
         print('aaaa')
         print(user_instance)
         request.data["user_id"] = user_instance.pk
+        us = User.objects.get(id=user_instance.pk)
+        token_serializer = MyTokenObtainPairSerializer()
+        token = token_serializer.get_token(us)
+        print(MyTokenObtainPairSerializer)
+        print(us)
+        print(token)
+        # Include the token in the response data
+        response_data = {
+            'token': str(token.access_token),
+
+            'user': user_instance.pk,
+
+
+            'user_info': userInfo
+        }
+        k = self.get_serializer(data=request_data,)
+        k.is_valid()
+        k.save()
+        print(k)
+
+        # Return the response
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
         return super().create(request, *args, **kwargs)
 
@@ -276,6 +298,10 @@ class TowCarOwnerViewSet (ModelViewSet):
 
             'user_info': user_info
         }
+        k = self.get_serializer(data=request_data,)
+        k.is_valid()
+        k.save()
+        print(k)
 
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
