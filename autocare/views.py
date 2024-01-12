@@ -199,7 +199,6 @@ class PartSupplierViewSet (ModelViewSet):
         for user_data in request_data:
             print(user_data)
             userInfo[user_data] = request_data.get(user_data, None)
-
         user = UserSerializer(data=userInfo)
         user.is_valid(raise_exception=True)
         user_instance = user.save()
@@ -216,10 +215,7 @@ class PartSupplierViewSet (ModelViewSet):
         response_data = {
             'token': str(token.access_token),
 
-            'user': user_instance.pk,
-
-
-            'user_info': userInfo
+            'user': user_instance.pk
         }
         k = self.get_serializer(data=request_data,)
         k.is_valid()
@@ -293,10 +289,7 @@ class TowCarOwnerViewSet (ModelViewSet):
             'access': str(token.access_token),
             'refresh': str(token),
 
-            'user': workshopUser.pk,
-
-
-            'user_info': user_info
+            'user': workshopUser.pk
         }
         k = self.get_serializer(data=request_data,)
         k.is_valid()
@@ -366,10 +359,7 @@ class WorkShopOwnerViewSet (ModelViewSet):
         response_data = {
             'token': str(token.access_token),
 
-            'user': workshopUser.pk,
-
-
-            'user_info': user_info
+            'user': workshopUser.pk
         }
         k = self.get_serializer(data=request_data,)
         k.is_valid()

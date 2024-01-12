@@ -14,7 +14,7 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='autocare/images', null=True)
     user_type = models.CharField(max_length=30)
 
-    USERNAME_FIELD = 'username'
+    USERNAME_FIELD = 'phoneNumber'
 
     REQUIRED_FIELDS = ['fullName',
                        'email', 'age', 'avatar', 'user_type']
@@ -23,8 +23,25 @@ class User(AbstractUser):
         return self.fullName
 
 
+class origin(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class Brand(models.Model):
+    origin = models.ForeignKey(origin, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
 class PartSupplier(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
+    origin = models.ForeignKey(origin, on_delete=models.CASCADE)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.user_id.fullName
@@ -42,21 +59,6 @@ class WorkShopOwner(models.Model):
 
     def __str__(self):
         return self.user_id.fullName
-
-
-class origin(models.Model):
-    name = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.name
-
-
-class Brand(models.Model):
-    origin = models.ForeignKey(origin, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.name
 
 
 class location(models.Model):

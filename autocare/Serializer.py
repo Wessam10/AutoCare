@@ -43,7 +43,7 @@ class PartSupplierSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = PartSupplier
-        fields = ['user_id', 'user']
+        fields = ['user_id', 'user', 'origin', 'brand']
 
 
 class WorkShopOwnerSerializer (serializers.ModelSerializer):
