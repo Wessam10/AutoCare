@@ -14,7 +14,7 @@ from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages,
                      WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
-                     product, TowCar)
+                     Product, TowCar)
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
                          OriginSerializer, PartSupplierSerializer,
@@ -211,7 +211,7 @@ class PartSupplierViewSet (ModelViewSet):
 
 
 class productViewSet (ModelViewSet):
-    queryset = product.objects.all().order_by('pk')
+    queryset = Product.objects.all().order_by('pk')
     serializer_class = productSerializer
     # permission_classes = [IsAuthenticated]
 
@@ -326,6 +326,7 @@ class WorkShopOwnerViewSet (ModelViewSet):
         user = UserSerializer(data=user_info)
         user.is_valid(raise_exception=True)
         workshopUser = user.save()
+        workshopUser
         print(workshopUser)
         request_data["user_id"] = workshopUser.pk
         print('done')
@@ -344,6 +345,10 @@ class WorkShopOwnerViewSet (ModelViewSet):
 
             'user_info': user_info
         }
+        k = self.get_serializer(data=request_data,)
+        k.is_valid()
+        k.save()
+        print(k)
 
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
@@ -458,9 +463,9 @@ class favoriteViewSet (ModelViewSet):
 
         WorkShop = get_object_or_404(WorkShop, pk=id)
         if WorkShop.favorite.filter(id=request.user.id).exist():
-            product.favorite.remove(request.user)
+            Product.favorite.remove(request.user)
         else:
-            product.favorite.add(request.user)
+            Product.favorite.add(request.user)
 
     def retrieve(self, request, *args, **kwargs):
         user = request.user_id
@@ -472,7 +477,7 @@ class favoriteViewSet (ModelViewSet):
 class ProductPartViewSet (ModelViewSet):
     queryset = ProductPartSupplier.objects.filter()
     serializer_class = ProductPartSupplierSerializer
-    permission_classes = [IsAuthenticated, PartSupplierAuth]
+    # permission_classes = [IsAuthenticated, PartSupplierAuth]
     # for brand_string in brands_data[0].split(','):
     #     print(brand_string)
     #     shopBrands = workshopBrandsSerializer(
@@ -482,7 +487,7 @@ class ProductPartViewSet (ModelViewSet):
         request.data._mutable = True
         data = request.data.pk
         user = request.user.pk
-        pro = product.object.get(id=data)
+        pro = Product.object.get(id=data)
         print(user)
         request.data['partSupplierId'] = user
         product_info = {}
@@ -514,7 +519,6 @@ def add(request):
             "Volkswagen (VW)",
             "Porsche",
             "Audi",
-            "BMW",
             "Mercedes-AMG",
             "MAN",
             "Wiesmann",
@@ -536,7 +540,7 @@ def add(request):
 
     }
 
-    for i in cars["Germany"]:
+    for i in cars["USA"]:
         ori = Brand(name=i, origin=origin.objects.get(name='Germany'))
         print(ori)
         ori.save()
@@ -618,39 +622,44 @@ def AddCity(request):
 
 @api_view(['POST'])
 def AddProduct(request):
-    origin_type = [
+    origin_type = {"Motor": [
+        "Engine",
+        "Gear Box",
+        "Fuel system",
+        "Steering system",
+        "Ignition system",
+        "Exhaust system",
+        "Axles",
+        "Drive shaft",
+        "Radiator",
+        "Filters (air)",
+        "Filters (fuel)",
+        "Filters (oil)",
+        "Battery",],
+        "Body": [
         "Front Light",
         "Front Pumper",
         "Back Pumper",
-        "Engine",
         "Door",
-        "Gear Box",
+        "Belts",],
+        "Electric": [
+        "Electrical system",
+        "Alternator",
+        "Hoses",],
+        "Suspension": [
         "Transmission",
         "Brakes",
-        "Suspension system",
-        "Exhaust system",
-        "Fuel system",
-        "Electrical system",
-        "Battery",
-        "Radiator",
-        "Alternator",
-        "Ignition system",
-        "Steering system",
-        "Drive shaft",
-        "Axles",
-        "Wheels",
-        "Tires",
-        "Belts",
-        "Hoses",
-        "Filters (air)"
-        "Filters (oil)"
-        "Filters (fuel)"
+        "Suspension system",]
 
 
-    ]
+    }
 
     for i in origin_type:
-        ori = product(productName=i)
-        print(ori)
-        ori.save()
+        for x in origin_type[i]:
+            ori = Product(
+                productName=x, category=Specialist.objects.get(name=i))
+            ori.save()
+
+        print(i)
+        print(origin_type[i])
     return Response()

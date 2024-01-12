@@ -14,7 +14,7 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='autocare/images', null=True)
     user_type = models.CharField(max_length=30)
 
-    USERNAME_FIELD = 'phoneNumber'
+    USERNAME_FIELD = 'username'
 
     REQUIRED_FIELDS = ['fullName',
                        'email', 'age', 'avatar', 'user_type']
@@ -170,10 +170,11 @@ class TowCar (models.Model):
     coverageCity = models.ForeignKey(City, on_delete=models.DO_NOTHING)
 
 
-class product(models.Model):
+class Product(models.Model):
     productName = models.CharField(max_length=255)
 
-    category = models.ForeignKey(Specialist, on_delete=models.DO_NOTHING)
+    category = models.ForeignKey(
+        Specialist, on_delete=models.DO_NOTHING)
     description = models.CharField(max_length=255)
     code = models.CharField(max_length=255)
     productImage = models.ImageField(upload_to='autocare/images', null=True)
@@ -186,7 +187,7 @@ class product(models.Model):
 class ProductPartSupplier(models.Model):
     partSupplierId = models.ForeignKey(
         PartSupplier, on_delete=models.CASCADE)
-    productId = models.ForeignKey(product, on_delete=models.CASCADE)
+    productId = models.ForeignKey(Product, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
     count = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=19, decimal_places=4)
