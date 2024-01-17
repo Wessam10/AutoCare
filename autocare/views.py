@@ -14,7 +14,7 @@ from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages,
                      WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
-                     Product, TowCar)
+                     Product, TowCar, CarModel)
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
                          OriginSerializer, PartSupplierSerializer,
@@ -23,7 +23,7 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, TowCarSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
+                         maintenanceSerializer, productSerializer, TowCarSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
 
 
@@ -208,19 +208,15 @@ class PartSupplierViewSet (ModelViewSet):
         us = User.objects.get(id=user_instance.pk)
         token_serializer = MyTokenObtainPairSerializer()
         token = token_serializer.get_token(us)
-        print(MyTokenObtainPairSerializer)
-        print(us)
-        print(token)
+        k = self.get_serializer(data=request_data)
+        k.is_valid()
+        k.save()
         # Include the token in the response data
         response_data = {
             'token': str(token.access_token),
 
             'user': user_instance.pk
         }
-        k = self.get_serializer(data=request_data,)
-        k.is_valid()
-        k.save()
-        print(k)
 
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
@@ -501,22 +497,35 @@ class ProductPartViewSet (ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
-        data = request.data.pk
+        data = request.data
         user = request.user.pk
-        pro = Product.object.get(id=data)
         print(user)
         request.data['partSupplierId'] = user
         product_info = {}
-        print('1')
         for product_data in data:
             print(product_data)
             product_info[product_data] = data.get(product_data, None)
+        origin_brands = []
+        origin = product_info.get('origin', None)
+        if origin:
+            origin_brands = Brand.objects.filter(origin=origin)
+        print(origin_brands)
+
+        # Add the filtered brands to the product_info dictionary
+        product_info['brands'] = [brand.pk for brand in origin_brands]
         print(product_info)
         product = ProductPartSupplierSerializer(data=product_info)
         product.is_valid(raise_exception=True)
         workshopUser = product.save()
 
         return super().create(request, *args, **kwargs)
+
+
+class CarModelViewSet(ModelViewSet):
+    queryset = CarModel.objects.filter()
+    serializer_class = CarModelSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['brand']
 
 
 @api_view(['GET', 'POST'])
@@ -526,40 +535,87 @@ def add(request):
             "BMW",
             "Mercedes-Benz",
             "Audi",
-            "Volkswagen",
-            "Porsche",
             "Opel",
-            "Mini",
-            "Smart",
-            "Maybach",
-            "Volkswagen (VW)",
-            "Porsche",
-            "Audi",
-            "Mercedes-AMG",
-            "MAN",
-            "Wiesmann",
-            "Borgward",
-            "Gumpert",
-            "Ruf Automobile",
-            "Brabus"
+            "Volkswagen",
+            "Porsche"
         ],
         "USA": [
             "Ford",
+            "Chevrolet",
+            "Tesla",
             "Dodge",
-            "GMC",
             "Jeep",
-            "TESLA",
-            "CHRYSLER",
-            "CHEVROLET",
-            "POLARIS",
-            "Cadillac",]
+            "GMC",
+            "polaris",
+            "Chrysler",
+            "Cadillac"
+        ],
+        "Japan": [
+            "Toyota",
+            "Honda",
+            "Nissan",
+            "Mazda",
+            "Subaru"
+        ],
+        "South Korea": [
+            "Hyundai",
+            "Kia",
+            "Genesis",
+            "Samsung",
+            "SsangYong"
+        ],
+        "Italy": [
+            "Ferrari",
+            "Lamborghini",
+            "Maserati",
+            "Alfa Romeo",
+            "Fiat"
+        ],
+        "Spain": [
+            "SEAT",
+            "Cupra",
+            "Pegaso",
+            "Hispano-Suiza",
+            "GTA Motor"
+        ],
+        "UK": [
+            "Jaguar",
+            "Land Rover",
+            "Aston Martin",
+            "Rolls-Royce",
+            "Bentley"
+        ],
+        "Iran": [
+
+            "Iran Khodro",
+            "Saipa",
+            "Kish Khodro",
+            "Pars Khodro",
+            "Bahman Group"
+        ],
+        "China": [
+            "Geely",
+            "BYD",
+            "Changan",
+            "Great Wall",
+            "SAIC Motor"
+        ],
+
+        "France": [
+            "Peugeot",
+            "Renault",
+            "Citroen",
+            "Bugatti",
+            "DS Automobiles"
+        ]
 
     }
 
-    for i in cars["USA"]:
-        ori = Brand(name=i, origin=origin.objects.get(name='Germany'))
-        print(ori)
-        ori.save()
+    for i in cars:
+        for x in cars[i]:
+            ori = Brand(name=x, origin=origin.objects.get(name=i))
+            print(ori)
+            ori.save()
     return Response()
 
 
@@ -678,4 +734,367 @@ def AddProduct(request):
 
         print(i)
         print(origin_type[i])
+    return Response()
+
+
+@api_view(['POST'])
+def AddCarModel(request):
+    brand = {"Toyota": [
+        "camry",
+        "corolla",
+        "yaris",
+        "prius",
+        "rav4",
+        "highlander",
+        "land cruiser"
+    ],
+        "Honda": [
+        "civic",
+        "accord",
+        "cr-v",
+        "odyssey",
+        "pilot",
+        "fit",
+        "hr-v",
+        "insight",
+        "passport"
+    ],
+        "Ford": [
+        "f-150",
+        "mustang",
+        "explorer",
+        "edge",
+        "ranger",
+        "fusion",
+        "focus",
+    ],
+        "Chevrolet": [
+        "silverado",
+        "malibu",
+        "impala",
+        "corvette",
+        "Camaro",
+        "spark",
+        "suburban",
+        "tahoe"
+    ],
+        "Nissan": [
+        "altima",
+        "maxima",
+        "sentra",
+        "pathfinder",
+        "titan",
+        "frontier"
+        "armada"
+    ],
+
+        "BMW": [
+        "1 Series",
+        "2 Series",
+        "3 Series",
+        "4 Series",
+        "5 Series",
+        "6 Series",
+        "7 Series",
+        "8 Series",
+        "X1",
+        "X2",
+        "X3",
+        "X4",
+        "X5",
+        "X6",
+        "Z4",
+        "i3",
+        "i8",
+        "M4"
+    ],
+        "Mercedes-Benz": [
+        "C-Class",
+        "E-Class",
+        "S-Class",
+        "GLA-Class",
+        "GLC-Class",
+        "GLE-Class",
+        "GLS-Class",
+        "AMG GT",
+        "SL-Class",
+        "G-Class"
+    ],
+        "Audi": [
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "Q3",
+        "Q5",
+        "Q7",
+        "TT",
+        "R8",
+        "S5"
+    ],
+        "Opel": [
+        "Corsa",
+        "Omega",
+        "Astra",
+
+    ],
+        "Volkswagen": [
+        "Golf",
+        "Passat",
+        "Tiguan",
+        "T-Roc",
+        "T-Cross",
+        "Arteon",
+        "Touran",
+        "Sharan",
+        "Transporter",
+        "Caddy"
+    ],
+        "Porsche": [
+        "911",
+        "Cayman",
+        "Boxster",
+        "Panamera",
+        "Macan",
+        "Cayenne",
+        "Taycan",
+        "718",
+        "911 GT2 RS",
+        "911 Turbo S"
+    ],
+        "Tesla": [
+        "Model S",
+        "Model 3",
+        "Model X",
+        "Model Y",
+        "Roadster",
+    ],
+        "Dodge": [
+        "Charger",
+        "Challenger",
+        "Durango",
+        "Journey",
+        "Grand Caravan",
+        "Ram 1500",
+        "Ram 2500",
+        "Ram 3500",
+        "Viper",
+        "Dakota"
+    ],
+        "Jeep": [
+        "Wrangler",
+        "Grand Cherokee",
+        "Cherokee",
+        "Compass",
+        "Renegade",
+        "Gladiator",
+        "Commander",
+        "Patriot",
+        "Liberty",
+        "Wagoneer"
+    ],
+        "GMC": [
+        "Sierra",
+        "Acadia",
+        "Terrain",
+        "Yukon",
+        "Canyon",
+    ],
+        "Hyundai": [
+            "Sonata",
+            "Elantra",
+            "Tucson",
+            "Santa Fe"
+    ],
+        "Kia": [
+            "Optima",
+            "Soul",
+            "Sportage",
+            "Sorento",
+            "Stinger"
+    ],
+        "Genesis": [
+            "G70",
+            "G80",
+            "G90",
+            "GV70",
+            "GV80"
+    ],
+        "Samsung": [
+            "SM3",
+            "SM5",
+            "SM6",
+            "SM7",
+            "QM6"
+    ],
+        "SsangYong": [
+            "Tivoli",
+            "Korando",
+            "Rexton",
+            "Musso",
+            "Rodius"
+    ],
+
+
+        "Ferrari": [
+            "488 GTB",
+            "Portofino",
+            "F8 Tributo",
+            "SF90 Stradale",
+            "Roma"
+    ],
+        "Lamborghini": [
+            "Aventador",
+            "Huracán",
+            "Urus",
+            "Sian",
+            "Essenza SCV12"
+    ],
+        "Maserati": [
+            "Ghibli",
+            "Quattroporte",
+            "Levante",
+            "GranTurismo",
+            "MC20"
+    ],
+        "Alfa Romeo": [
+            "Giulia",
+            "Stelvio",
+            "Giulietta",
+            "4C Spider",
+            "Tonale"
+    ],
+        "Fiat": [
+            "500",
+            "Panda",
+            "Tipo",
+            "124 Spider",
+            "500X"
+    ],
+        "SEAT": [
+            "Leon",
+            "Ibiza",
+            "Ateca",
+            "Arona",
+            "Tarraco"
+    ],
+        "Cupra": [
+            "Leon",
+            "Formentor",
+            "Ateca"
+    ],
+        "Jaguar": [
+            "F-Type",
+            "XE",
+            "XF",
+            "XJ",
+            "F-PACE"
+    ],
+        "Land Rover": [
+            "Range Rover",
+            "Range Rover Sport",
+            "Range Rover Velar",
+            "Defender",
+            "Discovery"
+    ],
+        "Aston Martin": [
+            "DB11",
+            "Vantage",
+            "DBS Superleggera",
+            "Rapide AMR",
+            "Valhalla"
+    ],
+        "Rolls-Royce": [
+            "Phantom",
+            "Ghost",
+            "Wraith",
+            "Dawn",
+            "Cullinan"
+    ],
+        "Bentley": [
+            "Continental GT",
+            "Flying Spur",
+            "Bentayga",
+            "Mulsanne",
+            "Bacalar"
+    ],
+        "Geely": [
+            "Emgrand X7",
+            "Bo Rui",
+            "Coolray",
+            "Vision X3",
+            "Atlas Pro"
+    ],
+        "BYD": [
+            "Tang",
+            "Han",
+            "Song Plus",
+            "Yuan",
+            "e2"
+    ],
+        "Changan": [
+            "CS75 Plus",
+            "CS35 Plus",
+            "CS55 Plus",
+            "CS95",
+            "UNI-T"
+    ],
+        "Great Wall": [
+            "Haval H6",
+            "Haval H9",
+            "Haval F7",
+            "Wey VV7",
+            "Wingle 7"
+    ],
+        "SAIC Motor": [
+            "MG ZS",
+            "Roewe RX5",
+            "Maxus G50",
+            "LDV T60",
+            "Baojun 530"
+    ],
+        "Peugeot": [
+            "208",
+            "308",
+            "3008",
+            "5008",
+            "Partner"
+    ],
+        "Renault": [
+            "Clio",
+            "Megane",
+            "Captur",
+            "Kadjar",
+            "Talisman"
+    ],
+        "Citroen": [
+            "C3",
+            "C4",
+            "C5 Aircross",
+            "Berlingo",
+            "Jumpy"
+    ],
+        "Bugatti": [
+            "Chiron",
+            "Divo",
+            "Centodieci",
+            "La Voiture Noire",
+            "Veyron"
+    ],
+        "DS Automobiles": [
+            "DS 3 Crossback",
+            "DS 7 Crossback",
+            "DS 9",
+            "DS 4",
+            "DS 5"
+    ]}
+
+    for i in brand:
+        for x in brand[i]:
+            print("11111111111111111111111")
+            ori = CarModel(
+                name=x, brand=Brand.objects.get(name=i))
+            ori.save()
+        print(i)
+        print(brand[i])
     return Response()

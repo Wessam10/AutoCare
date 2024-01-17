@@ -41,7 +41,6 @@ class Brand(models.Model):
 class PartSupplier(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
     origin = models.ForeignKey(origin, on_delete=models.CASCADE)
-    brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.user_id.fullName
@@ -102,10 +101,18 @@ class CarOwner(models.Model):
         return self.user_id.fullName
 
 
+class CarModel(models.Model):
+    name = models.CharField(max_length=255)
+    brand = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return self.name
+
+
 class Cars(models.Model):
     userId = models.ForeignKey(CarOwner, on_delete=models.CASCADE)
-    carBrand = models.ForeignKey(Brand, on_delete=models.CASCADE)
-    carModel = models.CharField(max_length=255)
+    carBrand = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
+    carModel = models.ForeignKey(CarModel, on_delete=models.DO_NOTHING)
     carYear = models.CharField(max_length=255)
     carColor = models.CharField(max_length=255)
     plateNumber = models.CharField(max_length=255)
@@ -190,6 +197,6 @@ class ProductPartSupplier(models.Model):
     partSupplierId = models.ForeignKey(
         PartSupplier, on_delete=models.CASCADE)
     productId = models.ForeignKey(Product, on_delete=models.CASCADE)
-    brand = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
+    brands = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
     count = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=19, decimal_places=4)

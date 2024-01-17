@@ -25,6 +25,7 @@ routers.register('ManageWorkShopImages', views.WorkShopImagesViewSet)
 routers.register('ManageOrigin_Brand', views.Origin_BrandViewSet)
 routers.register('GetSpecialists', views.SpecialistViewSet)
 routers.register('AssignProduct', views.ProductPartViewSet)
+routers.register('CarModel', views.CarModelViewSet)
 
 
 routers.urls
@@ -33,6 +34,7 @@ urlpatterns = [
     path('', include(routers.urls)),
     path('profile', views.userImagesViewSet.as_view()),
     path('add', views.add),
+    path('AddCarModel', views.AddCarModel),
     path('userType', views.userType),
     path('AddSpecialist', views.AddSpecialist),
     path('AddOrigin', views.AddOrigin),
