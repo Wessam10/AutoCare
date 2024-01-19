@@ -89,13 +89,19 @@ class WorkShopViewSet (ModelViewSet):
         print('wwww')
         # TODO BTING ID FORM REQUEST AND ADD IT TO DATA
         request.data._mutable = True
-        user = request.user.pk
+        user = self.request.user.pk
         print(request.data)
         ShopOwner = WorkShopOwner.objects.get(user_id=user)
         print(ShopOwner)
         request.data["workshopOwnerId"] = ShopOwner.pk
         print('1')
         return super().create(request, *args, **kwargs)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Remove the 'user' field from the representation
+        representation.pop('user', None)
+        return representation
 
 
 class RequestViewSet (ModelViewSet):
@@ -169,7 +175,7 @@ class CarsViewSet (ModelViewSet):
     def create(self, request, *args, **kwargs):
         print('aaaa')
         request.data._mutable = True
-        user = request.user.pk
+        user = self.request.user.pk
         carOwner = CarOwner.objects.get(user_id=user)
         print(user)
         request.data["userId"] = carOwner.pk
@@ -395,7 +401,7 @@ class userImagesViewSet(generics.RetrieveUpdateAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         # Get the user object using DRF's built-in method
-        user = self.queryset.get(pk=request.user.pk)
+        user = self.queryset.get(pk=self.request.user.pk)
         print(user)
         serializer = self.get_serializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -409,7 +415,7 @@ class WorkShopImagesViewSet (ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
-        user_id = request.user.pk
+        user_id = self.request.user.pk
         print(user_id)
         workshops = WorkShop.objects.get(workshopOwnerId__user_id=user_id)
         workshop_id = workshops.pk
@@ -427,7 +433,7 @@ class TowCarViewSet(ModelViewSet):
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         request_data = request.data
-        user = request.user.pk
+        user = self.request.user.pk
         request.data["userId"] = user
         towCar_info = {}
         for user_data in request_data:
@@ -498,7 +504,7 @@ class ProductPartViewSet (ModelViewSet):
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         data = request.data
-        user = request.user.pk
+        user = self.request.user.pk
         print(user)
         request.data['partSupplierId'] = user
         product_info = {}
