@@ -9,21 +9,23 @@ from rest_framework.viewsets import ModelViewSet, generics
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.pagination import PageNumberPagination
+
 
 from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages,
                      WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
-                     Product, TowCar, CarModel)
+                     Product, TowCars, CarModel, TowBrand, TowOrigin)
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
-from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer,
+from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, TowBrandSerializer, TowOriginSerializer,
                          OriginSerializer, PartSupplierSerializer,
                          RequestSerializer, TowCarOwnerSerializer,
                          TowRequestSerializer, UserImageSerializer,
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, TowCarSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
+                         maintenanceSerializer, productSerializer, TowCarsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
 
 
@@ -78,6 +80,12 @@ class MyTokenObtainPairView(TokenObtainPairView):
     #     return token
 
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class WorkShopViewSet (ModelViewSet):
     queryset = WorkShop.objects.all().order_by('pk')
     serializer_class = WorkShopSerializer
@@ -115,6 +123,14 @@ class RequestViewSet (ModelViewSet):
 class BrandViewSet (ModelViewSet):
     queryset = Brand.objects.all().order_by('pk')
     serializer_class = BrandSerializer
+    # permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['origin']
+
+
+class TowBrandViewSet (ModelViewSet):
+    queryset = TowBrand.objects.all().order_by('pk')
+    serializer_class = TowBrandSerializer
     # permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['origin']
@@ -375,7 +391,11 @@ class WorkShopOwnerViewSet (ModelViewSet):
 class OriginViewSet (ModelViewSet):
     queryset = origin.objects.all().order_by('pk')
     serializer_class = OriginSerializer
-    permission_classes = [IsAuthenticated]
+
+
+class TowOriginViewSet (ModelViewSet):
+    queryset = TowOrigin.objects.all().order_by('pk')
+    serializer_class = TowOriginSerializer
 
 
 class CheckupViewSet (ModelViewSet):
@@ -427,24 +447,27 @@ class WorkShopImagesViewSet (ModelViewSet):
 
 
 class TowCarViewSet(ModelViewSet):
-    queryset = TowCar.objects.filter()
-    serializer_class = TowCarSerializer
+    queryset = TowCars.objects.filter()
+    serializer_class = TowCarsSerializer
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         request_data = request.data
         user = self.request.user.pk
-        request.data["userId"] = user
+        carOwner = TowCarOwner.objects.get(user_id=user)
+
+        request.data["userId"] = carOwner.pk
+
         towCar_info = {}
         for user_data in request_data:
             print(user_data)
             towCar_info[user_data] = request_data.get(user_data, None)
+        car = TowCarsSerializer(data=towCar_info)
         print(towCar_info)
-        car = CarsSerializer(data=towCar_info)
         car.is_valid(raise_exception=True)
+        print("1!!!!")
         workshopUser = car.save()
-        print(workshopUser)
-        request_data["car_id"] = workshopUser.pk
+        print(workshopUser.pk)
 
         return super().create(request, *args, **kwargs)
 
@@ -528,6 +551,7 @@ class ProductPartViewSet (ModelViewSet):
 
 
 class CarModelViewSet(ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = CarModel.objects.filter()
     serializer_class = CarModelSerializer
     filter_backends = [DjangoFilterBackend]
@@ -657,6 +681,7 @@ def AddSpecialist(request):
 @api_view(['POST'])
 def AddOrigin(request):
     origin_type = [
+        "Germany",
         "Japan",
         "USA",
         "UK",
@@ -671,6 +696,54 @@ def AddOrigin(request):
         ori = origin(name=i)
         print(ori)
         ori.save()
+    return Response()
+
+
+@api_view(['POST'])
+def AddTowOrigin(request):
+    origin_type = [
+        "Germany",
+        "Japan",
+        "USA",
+        "UK",
+        "Italy",
+        "Spain",
+        "South Korea",
+        "China",
+        "Iran",
+        "Sweden"
+    ]
+
+    for i in origin_type:
+        ori = TowOrigin(name=i)
+        print(ori)
+        ori.save()
+    return Response()
+
+
+@api_view(['POST'])
+def AddTowBrand(request):
+    cars = {
+        "Germany": [
+            "Mercedes-Benz"],
+        "USA": [
+            "Ford",
+
+        ],
+        "Italy": [
+            "Fiat",],
+        "Sweden": [
+            "Volvo",],
+
+    }
+
+    for i in cars:
+
+        for x in cars[i]:
+            print("11111111111111111111111")
+            ori = TowBrand(
+                name=x, origin=TowOrigin.objects.get(name=i))
+            ori.save()
     return Response()
 
 

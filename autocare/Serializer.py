@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WorkShop, CarModel, workshopBrands, TowCar, Specialist, ProductPartSupplier, Request, Specialist, Brand, CarOwner, Cars,  PartSupplier, Product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
+from .models import WorkShop, CarModel, workshopBrands, TowCars, Specialist, TowBrand, TowOrigin, ProductPartSupplier, Request, Specialist, Brand, CarOwner, Cars,  PartSupplier, Product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.hashers import make_password
@@ -43,6 +43,14 @@ class BrandSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = Brand
+        fields = ['origin',  'originName', 'id', 'name']
+
+
+class TowBrandSerializer (serializers.ModelSerializer):
+    originName = serializers.CharField(source='origin.name', read_only=True)
+
+    class Meta:
+        model = TowBrand
         fields = ['origin',  'originName', 'id', 'name']
 
 
@@ -111,6 +119,12 @@ class OriginSerializer (serializers.ModelSerializer):
         fields = ['name']
 
 
+class TowOriginSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = TowOrigin
+        fields = ['name']
+
+
 class SpecialistSerializer (serializers.ModelSerializer):
     class Meta:
         model = Specialist
@@ -172,7 +186,14 @@ class RequestSerializer (serializers.ModelSerializer):
 class CarsSerializer (serializers.ModelSerializer):
     class Meta:
         model = Cars
-        fields = ['userId', 'carBrand', 'carModel',
+        fields = ['userId', 'carBrand', 'carModel', 'carOrigin',
+                  'carYear', 'carColor', 'plateNumber', 'avatar']
+
+
+class TowCarsSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = TowCars
+        fields = ['userId', 'carBrand', 'carOrigin', 'coverageCity',
                   'carYear', 'carColor', 'plateNumber', 'avatar']
 
 
@@ -258,12 +279,12 @@ class TowCarOwnerSerializer (serializers.ModelSerializer):
         fields = ['user_id', 'user']
 
 
-class TowCarSerializer(serializers.ModelSerializer):
-    carId = CarsSerializer(source='car_id', read_only=True)
+# class TowCarSerializer(serializers.ModelSerializer):
+#     carId = TowCarsSerializer(source='car_id', read_only=True)
 
-    class Meta:
-        model = TowCar
-        fields = ['userId', 'car_id', 'carId', 'coverageCity']
+#     class Meta:
+#         model = TowCar
+#         fields = ['userId', 'car_id', 'carId', 'coverageCity']
 
 
 class specialistSerializer(serializers.ModelSerializer):
@@ -275,4 +296,4 @@ class specialistSerializer(serializers.ModelSerializer):
 class CarModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarModel
-        fields = ['name', 'brand']
+        fields = ['id', 'name', 'brand']

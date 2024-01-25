@@ -30,8 +30,23 @@ class origin(models.Model):
         return self.name
 
 
+class TowOrigin(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
 class Brand(models.Model):
     origin = models.ForeignKey(origin, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class TowBrand(models.Model):
+    origin = models.ForeignKey(TowOrigin, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
 
     def __str__(self):
@@ -111,18 +126,38 @@ class CarModel(models.Model):
 
 class Cars(models.Model):
     userId = models.ForeignKey(CarOwner, on_delete=models.CASCADE)
+    carOrigin = models.ForeignKey(origin, on_delete=models.CASCADE)
     carBrand = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
     carModel = models.ForeignKey(CarModel, on_delete=models.DO_NOTHING)
     carYear = models.CharField(max_length=255)
     carColor = models.CharField(max_length=255)
-    plateNumber = models.CharField(max_length=255)
+    plateNumber = models.CharField(max_length=255, unique=True)
     avatar = models.ImageField(upload_to='autocare/images', null=True)
 
     def __str__(self):
-        if self.carBrand:
-            return str(self.carBrand.name)
-        else:
-            return "No brand specified"
+        return self.carBrand.name
+
+
+class City (models.Model):
+    name = models.CharField(max_length=30)
+
+    def __str__(self):
+        return self.name
+
+
+class TowCars(models.Model):
+    userId = models.ForeignKey(
+        TowCarOwner, on_delete=models.CASCADE)
+    coverageCity = models.ForeignKey(City, on_delete=models.DO_NOTHING)
+    carOrigin = models.ForeignKey(TowOrigin, on_delete=models.CASCADE)
+    carBrand = models.ForeignKey(TowBrand, on_delete=models.DO_NOTHING)
+    carYear = models.CharField(max_length=255)
+    carColor = models.CharField(max_length=255)
+    plateNumber = models.CharField(max_length=255, unique=True)
+    avatar = models.ImageField(upload_to='autocare/images', null=True)
+
+    def __str__(self):
+        return self.carBrand.name
 
 
 class WorkShopImages(models.Model):
@@ -163,20 +198,6 @@ class TowRequest (models.Model):
 class workshopBrands (models.Model):
     brands = models.ForeignKey(Brand, on_delete=models.CASCADE)
     workshop = models.ForeignKey(WorkShop, on_delete=models.CASCADE)
-
-
-class City (models.Model):
-    name = models.CharField(max_length=30)
-
-    def __str__(self):
-        return self.name
-
-
-class TowCar (models.Model):
-    userId = models.ForeignKey(
-        TowCarOwner, on_delete=models.CASCADE)
-    car_id = models.ForeignKey(Cars, on_delete=models.CASCADE)
-    coverageCity = models.ForeignKey(City, on_delete=models.DO_NOTHING)
 
 
 class Product(models.Model):

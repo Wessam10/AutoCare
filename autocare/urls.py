@@ -26,6 +26,8 @@ routers.register('ManageOrigin_Brand', views.Origin_BrandViewSet)
 routers.register('GetSpecialists', views.SpecialistViewSet)
 routers.register('AssignProduct', views.ProductPartViewSet)
 routers.register('CarModel', views.CarModelViewSet)
+routers.register('TowBrand', views.TowBrandViewSet)
+routers.register('TowOrigin', views.TowOriginViewSet)
 
 
 routers.urls
@@ -40,4 +42,6 @@ urlpatterns = [
     path('AddOrigin', views.AddOrigin),
     path('AddCity', views.AddCity),
     path('AddProduct', views.AddProduct),
+    path('AddTowOrigin', views.AddTowOrigin),
+    path('AddTowBrand', views.AddTowBrand),
 ]
