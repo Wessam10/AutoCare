@@ -135,13 +135,15 @@ class WorkShopSerializer (serializers.ModelSerializer):
     brands = serializers.ListField(write_only=True)
     WorkShopBrands = serializers.SerializerMethodField(read_only=True)
     originName = serializers.CharField(source='origin.name', read_only=True)
+    specialistName = serializers.CharField(
+        source='specialist.name', read_only=True)
     # workshopOwnerId = serializers.CharField(
     #     source='workshopOwnerId.user_id.username')
 
     class Meta:
         model = WorkShop
         fields = ['workshopOwnerId', 'brands', 'WorkShopBrands', 'originName', 'origin',  'locationId', 'address',
-                  'workshopName', 'currentCars', 'contactNumber',   'specialistName', 'avatar']
+                  'workshopName', 'currentCars', 'contactNumber',  'specialist', 'specialistName', 'avatar']
 
     def create(self, validated_data):
         brands_data = validated_data.pop('brands', [])  # Extract brands data

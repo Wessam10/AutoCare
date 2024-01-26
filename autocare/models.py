@@ -100,7 +100,7 @@ class WorkShop(models.Model):
     contactNumber = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     avatar = models.ImageField(upload_to='autocare/images', null=True)
-    specialistName = models.ForeignKey(
+    specialist = models.ForeignKey(
         Specialist, on_delete=models.CASCADE)
 
     def __str__(self):
