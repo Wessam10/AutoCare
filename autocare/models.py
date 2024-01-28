@@ -53,9 +53,22 @@ class TowBrand(models.Model):
         return self.name
 
 
+class location(models.Model):
+    longlat = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.longlat
+
+
 class PartSupplier(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
-    origin = models.ForeignKey(origin, on_delete=models.CASCADE)
+    origin = models.ForeignKey(
+        origin, on_delete=models.CASCADE)
+    locationId = models.ForeignKey(location, on_delete=models.CASCADE)
+    storeName = models.CharField(max_length=255)
+    contactNumber = models.CharField(max_length=255)
+    address = models.CharField(max_length=255)
+    avatar = models.ImageField(upload_to='autocare/images', null=True)
 
     def __str__(self):
         return self.user_id.fullName
@@ -73,13 +86,6 @@ class WorkShopOwner(models.Model):
 
     def __str__(self):
         return self.user_id.fullName
-
-
-class location(models.Model):
-    longlat = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.longlat
 
 
 class Specialist(models.Model):
@@ -105,6 +111,36 @@ class WorkShop(models.Model):
 
     def __str__(self):
         return self.workshopName
+
+
+class Product(models.Model):
+    productName = models.CharField(max_length=255)
+
+    category = models.ForeignKey(
+        Specialist, on_delete=models.DO_NOTHING)
+    description = models.CharField(max_length=255)
+    code = models.CharField(max_length=255)
+    productImage = models.ImageField(upload_to='autocare/images', null=True)
+    available = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.productName
+
+
+class Store(models.Model):
+    partSupplierId = models.ForeignKey(
+        PartSupplier, on_delete=models.CASCADE)
+
+    origin = models.ForeignKey(
+        origin, on_delete=models.CASCADE)
+    locationId = models.ForeignKey(location, on_delete=models.CASCADE)
+    storeName = models.CharField(max_length=255)
+    contactNumber = models.CharField(max_length=255)
+    address = models.CharField(max_length=255)
+    avatar = models.ImageField(upload_to='autocare/images', null=True)
+
+    def __str__(self):
+        return self.storeName
 
 
 class CarOwner(models.Model):
@@ -200,20 +236,6 @@ class workshopBrands (models.Model):
     workshop = models.ForeignKey(WorkShop, on_delete=models.CASCADE)
 
 
-class Product(models.Model):
-    productName = models.CharField(max_length=255)
-
-    category = models.ForeignKey(
-        Specialist, on_delete=models.DO_NOTHING)
-    description = models.CharField(max_length=255)
-    code = models.CharField(max_length=255)
-    productImage = models.ImageField(upload_to='autocare/images', null=True)
-    available = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.productName
-
-
 class ProductPartSupplier(models.Model):
     partSupplierId = models.ForeignKey(
         PartSupplier, on_delete=models.CASCADE)
@@ -221,3 +243,12 @@ class ProductPartSupplier(models.Model):
     brands = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
     count = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=19, decimal_places=4)
+
+
+class storeBrands (models.Model):
+    partSupplierId = models.ForeignKey(
+        PartSupplier, on_delete=models.CASCADE)
+    brands = models.ForeignKey(Brand, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.brands.name

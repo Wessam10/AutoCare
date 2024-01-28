@@ -16,7 +16,7 @@ from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages,
                      WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
-                     Product, TowCars, CarModel, TowBrand, TowOrigin)
+                     Product, TowCars, CarModel, TowBrand, TowOrigin, storeBrands, Store)
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, TowBrandSerializer, TowOriginSerializer,
                          OriginSerializer, PartSupplierSerializer,
@@ -25,7 +25,7 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, To
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, TowCarsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
+                         maintenanceSerializer, productSerializer, TowCarsSerializer, StoreSerializer, storeBrandsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
 
 
@@ -104,12 +104,6 @@ class WorkShopViewSet (ModelViewSet):
         request.data["workshopOwnerId"] = ShopOwner.pk
         print('1')
         return super().create(request, *args, **kwargs)
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        # Remove the 'user' field from the representation
-        representation.pop('user', None)
-        return representation
 
 
 class RequestViewSet (ModelViewSet):
@@ -225,7 +219,7 @@ class PartSupplierViewSet (ModelViewSet):
         user.is_valid(raise_exception=True)
         user_instance = user.save()
         print('aaaa')
-        print(user_instance)
+        print(user_instance.pk)
         request.data["user_id"] = user_instance.pk
         us = User.objects.get(id=user_instance.pk)
         token_serializer = MyTokenObtainPairSerializer()
@@ -519,43 +513,66 @@ class ProductPartViewSet (ModelViewSet):
     queryset = ProductPartSupplier.objects.filter()
     serializer_class = ProductPartSupplierSerializer
     # permission_classes = [IsAuthenticated, PartSupplierAuth]
-    # for brand_string in brands_data[0].split(','):
-    #     print(brand_string)
-    #     shopBrands = workshopBrandsSerializer(
-    #         data={'workshop': workshop.pk, 'brands': brand_string})
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         data = request.data
         user = self.request.user.pk
-        print(user)
-        request.data['partSupplierId'] = user
+        part_supplier = PartSupplier.objects.get(user_id=user)
+        request.data['partSupplierId'] = part_supplier.pk
+        print("1")
+        print(part_supplier.pk)
+
         product_info = {}
         for product_data in data:
-            print(product_data)
             product_info[product_data] = data.get(product_data, None)
+
         origin_brands = []
         origin = product_info.get('origin', None)
+        print("1!!!!!!")
         if origin:
-            origin_brands = Brand.objects.filter(origin=origin)
-        print(origin_brands)
+            print(part_supplier.pk)
+            origin_brands = storeBrands.objects.filter(
+                partSupplierId=part_supplier.pk)
+            print(origin_brands)
 
-        # Add the filtered brands to the product_info dictionary
-        product_info['brands'] = [brand.pk for brand in origin_brands]
-        print(product_info)
+        product_info['brands'] = [Brand.objects.get(
+            pk=brand_id) for brand_id in origin_brands]
         product = ProductPartSupplierSerializer(data=product_info)
         product.is_valid(raise_exception=True)
-        workshopUser = product.save()
+        product.save()
 
         return super().create(request, *args, **kwargs)
 
 
 class CarModelViewSet(ModelViewSet):
-    pagination_class = StandardResultsSetPagination
+    # pagination_class = StandardResultsSetPagination
     queryset = CarModel.objects.filter()
     serializer_class = CarModelSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['brand']
+
+
+class StoreViewSet(ModelViewSet):
+    queryset = Store.objects.all().order_by('pk')
+    serializer_class = StoreSerializer
+    # permission_classes = [IsAuthenticated, workshopOwnerAuth]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['origin']
+
+    def create(self, request, *args, **kwargs):
+        print('wwww')
+        # TODO BTING ID FORM REQUEST AND ADD IT TO DATA
+        request.data._mutable = True
+        user = self.request.user.pk
+        print(request.data)
+        print("a")
+        ShopOwner = PartSupplier.objects.get(user_id=user)
+        print(ShopOwner)
+        print("1!!!")
+        request.data["partSupplierId"] = ShopOwner.pk
+        print('1')
+        return super().create(request, *args, **kwargs)
 
 
 @api_view(['GET', 'POST'])
@@ -655,6 +672,13 @@ class locationsViewSet(ModelViewSet):
 
 
 @api_view(['GET'])
+def workShop(request):
+    work = WorkShop.objects.all()
+
+    return Response(type)
+
+
+@api_view(['GET'])
 def userType(request):
     type = {"type": ['Workshop Owner', 'Car Owner',
                      'Parts Supplier', 'Tow Car Owner']}
@@ -689,7 +713,8 @@ def AddOrigin(request):
         "Spain",
         "South Korea",
         "China",
-        "Iran"
+        "Iran",
+        "France"
     ]
 
     for i in origin_type:
