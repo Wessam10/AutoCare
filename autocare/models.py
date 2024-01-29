@@ -252,3 +252,7 @@ class storeBrands (models.Model):
 
     def __str__(self):
         return self.brands.name
+
+
+class Images (models.Model):
+    images = models.ImageField(upload_to='autocare/images', null=True)

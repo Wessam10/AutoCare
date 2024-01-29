@@ -16,7 +16,7 @@ from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages,
                      WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
-                     Product, TowCars, CarModel, TowBrand, TowOrigin, storeBrands, Store)
+                     Product, TowCars, CarModel, TowBrand, TowOrigin, storeBrands, Images, Store)
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, TowBrandSerializer, TowOriginSerializer,
                          OriginSerializer, PartSupplierSerializer,
@@ -25,7 +25,7 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, To
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, TowCarsSerializer, StoreSerializer, storeBrandsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
+                         maintenanceSerializer, productSerializer, ImagesSerializer, TowCarsSerializer, StoreSerializer, storeBrandsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
 
 
@@ -526,21 +526,24 @@ class ProductPartViewSet (ModelViewSet):
         product_info = {}
         for product_data in data:
             product_info[product_data] = data.get(product_data, None)
-
+            print(product_data)
         origin_brands = []
-        origin = product_info.get('origin', None)
-        print("1!!!!!!")
-        if origin:
-            print(part_supplier.pk)
-            origin_brands = storeBrands.objects.filter(
-                partSupplierId=part_supplier.pk)
-            print(origin_brands)
+        brand = product_info.get('brands', None)
+        print(brand)
+        for i in brand.split(','):
+            b = Brand.objects.filter(id=i).first()
+            print(i)
+            print(b)
+            if brand:
+                print(part_supplier.pk)
+                print(i)
+                print(b)
+                origin_brands = storeBrands.objects.filter(
+                    partSupplierId=part_supplier.pk, brands=i)
 
-        product_info['brands'] = [Brand.objects.get(
-            pk=brand_id) for brand_id in origin_brands]
-        product = ProductPartSupplierSerializer(data=product_info)
-        product.is_valid(raise_exception=True)
-        product.save()
+            product = ProductPartSupplierSerializer(data=product_info)
+            product.is_valid(raise_exception=True)
+            product.save()
 
         return super().create(request, *args, **kwargs)
 
@@ -573,6 +576,11 @@ class StoreViewSet(ModelViewSet):
         request.data["partSupplierId"] = ShopOwner.pk
         print('1')
         return super().create(request, *args, **kwargs)
+
+
+class ImageViewSet(ModelViewSet):
+    queryset = Images.objects.all()
+    serializer_class = ImagesSerializer
 
 
 @api_view(['GET', 'POST'])

@@ -29,6 +29,7 @@ routers.register('AssignProduct', views.ProductPartViewSet)
 routers.register('CarModel', views.CarModelViewSet)
 routers.register('TowBrand', views.TowBrandViewSet)
 routers.register('TowOrigin', views.TowOriginViewSet)
+routers.register('ImageViewSet', views.ImageViewSet, basename="image")
 
 
 routers.urls
