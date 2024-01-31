@@ -528,18 +528,18 @@ class ProductPartViewSet (ModelViewSet):
             product_info[product_data] = data.get(product_data, None)
             print(product_data)
         origin_brands = []
-        brand = product_info.get('brands', None)
-        print(brand)
-        for i in brand.split(','):
-            b = Brand.objects.filter(id=i).first()
-            print(i)
-            print(b)
-            if brand:
-                print(part_supplier.pk)
-                print(i)
+        brands = product_info.get('brands', None)
+        if brands:
+            brands_list = brands.split(',')
+            for brand in brands_list:
+                b = Brand.objects.filter(id=brand).first()
+                a = int(brand)
+                print(type(a))
+                print(brands)
                 print(b)
-                origin_brands = storeBrands.objects.filter(
-                    partSupplierId=part_supplier.pk, brands=i)
+                if b:
+                    origin_brands = storeBrands.objects.filter(
+                        partSupplierId=part_supplier.pk, brands=[16, 17])
 
             product = ProductPartSupplierSerializer(data=product_info)
             product.is_valid(raise_exception=True)
@@ -549,6 +549,7 @@ class ProductPartViewSet (ModelViewSet):
 
 
 class CarModelViewSet(ModelViewSet):
+
     # pagination_class = StandardResultsSetPagination
     queryset = CarModel.objects.filter()
     serializer_class = CarModelSerializer

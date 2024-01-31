@@ -92,7 +92,7 @@ class PartSupplierSerializer (serializers.ModelSerializer):
     def get_storeBrand(self, obj):
         print(obj)
         print(obj.pk)
-        Brand = storeBrands.objects.filter(store_id=obj.pk)
+        Brand = storeBrands.objects.filter(partSupplierId=obj.pk)
         return Brand.values_list("brands__name", flat=True)
 
 
