@@ -529,21 +529,25 @@ class ProductPartViewSet (ModelViewSet):
             print(product_data)
         origin_brands = []
         brands = product_info.get('brands', None)
-        if brands:
-            brands_list = brands.split(',')
-            for brand in brands_list:
-                b = Brand.objects.filter(id=brand).first()
-                a = int(brand)
-                print(type(a))
-                print(brands)
-                print(b)
-                if b:
-                    origin_brands = storeBrands.objects.filter(
-                        partSupplierId=part_supplier.pk, brands=[16, 17])
-
-            product = ProductPartSupplierSerializer(data=product_info)
-            product.is_valid(raise_exception=True)
-            product.save()
+        brands_list = [int(brand)
+                       for brand in brands.split(',') if brand.isdigit()]
+        print(type(brands_list))
+        origin_brands = storeBrands.objects.filter(
+            partSupplierId=part_supplier.pk, brands__in=brands_list)
+        #     brands_list = brands.split(',')
+        #     for brand in brands_list:
+        #         b = Brand.objects.filter(id=brand).first()
+        #         a = int(brand)
+        #         print(type(a))
+        #         print(brands)
+        #         print(b)
+        #         if b:
+        #             origin_brands = storeBrands.objects.filter(
+        #                 partSupplierId=part_supplier.pk, brands=[16, 17])
+        print(product_info)
+        product = ProductPartSupplierSerializer(data=product_info)
+        product.is_valid(raise_exception=True)
+        product.save()
 
         return super().create(request, *args, **kwargs)
 

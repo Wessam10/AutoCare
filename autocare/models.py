@@ -69,6 +69,7 @@ class PartSupplier(models.Model):
     contactNumber = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     avatar = models.ImageField(upload_to='autocare/images', null=True)
+    logo = models.ImageField(upload_to='autocare/images', null=True)
 
     def __str__(self):
         return self.user_id.fullName

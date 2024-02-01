@@ -73,7 +73,7 @@ class PartSupplierSerializer (serializers.ModelSerializer):
     class Meta:
         model = PartSupplier
         fields = ['user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'locationId', 'address',
-                  'storeName', 'contactNumber', 'avatar']
+                  'storeName', 'contactNumber', 'logo', 'avatar']
 
     def create(self, validated_data):
         brands_data = validated_data.pop('brands', [])  # Extract brands data
