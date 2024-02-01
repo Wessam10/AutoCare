@@ -83,7 +83,7 @@ class PartSupplierSerializer (serializers.ModelSerializer):
         print(type(brands_data))
         for brand_string in brands_data[0].split(','):
             shopBrands = storeBrandsSerializer(
-                data={'store': workshop.pk, 'brands': brand_string})
+                data={'partSupplierId': workshop.pk, 'brands': brand_string})
             shopBrands.is_valid(raise_exception=True)
             shopBrands.save()
 
@@ -116,7 +116,7 @@ class workshopBrandsSerializer (serializers.ModelSerializer):
 class storeBrandsSerializer (serializers.ModelSerializer):
     class Meta:
         model = storeBrands
-        fields = ['brands', 'store']
+        fields = ['brands', 'partSupplierId']
 
 
 class OriginSerializer (serializers.ModelSerializer):
