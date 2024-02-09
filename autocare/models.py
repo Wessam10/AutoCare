@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+
 # Create your models here.
 
 
@@ -64,7 +65,7 @@ class PartSupplier(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)
     origin = models.ForeignKey(
         origin, on_delete=models.CASCADE)
-    locationId = models.ForeignKey(location, on_delete=models.CASCADE)
+    location = models.CharField(max_length=255)
     storeName = models.CharField(max_length=255)
     contactNumber = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
@@ -101,7 +102,7 @@ class WorkShop(models.Model):
         WorkShopOwner, on_delete=models.CASCADE)
     origin = models.ForeignKey(
         origin, on_delete=models.CASCADE)
-    locationId = models.ForeignKey(location, on_delete=models.CASCADE)
+    location = models.CharField(max_length=255)
     workshopName = models.CharField(max_length=255)
     currentCars = models.IntegerField(default=1)
     contactNumber = models.CharField(max_length=255)
@@ -244,6 +245,9 @@ class ProductPartSupplier(models.Model):
     brands = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
     count = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=19, decimal_places=4)
+
+    def __str__(self):
+        return self.partSupplierId.user_id.fullName
 
 
 class storeBrands (models.Model):

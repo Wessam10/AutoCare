@@ -381,6 +381,9 @@ class WorkShopOwnerViewSet (ModelViewSet):
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
 
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
 
 class OriginViewSet (ModelViewSet):
     queryset = origin.objects.all().order_by('pk')
@@ -528,10 +531,11 @@ class ProductPartViewSet (ModelViewSet):
             product_info[product_data] = data.get(product_data, None)
             print(product_data)
         origin_brands = []
+        print(product_info, "@@@@@@@@@@@@")
         brands = product_info.get('brands', None)
         brands_list = [int(brand)
                        for brand in brands.split(',') if brand.isdigit()]
-        print(type(brands_list))
+        print(brands_list)
         origin_brands = storeBrands.objects.filter(
             partSupplierId=part_supplier.pk, brands__in=brands_list)
         #     brands_list = brands.split(',')
@@ -544,12 +548,17 @@ class ProductPartViewSet (ModelViewSet):
         #         if b:
         #             origin_brands = storeBrands.objects.filter(
         #                 partSupplierId=part_supplier.pk, brands=[16, 17])
-        print(product_info)
-        product = ProductPartSupplierSerializer(data=product_info)
-        product.is_valid(raise_exception=True)
-        product.save()
+        print(origin_brands.count(), brands_list.__len__())
+        if origin_brands.count() == brands_list.__len__():
+            for i in origin_brands:
+                product_info["brands"] = i.brands.pk
+                print(i.brands.pk)
+                print(product_info)
+                product = ProductPartSupplierSerializer(data=product_info)
+                product.is_valid(raise_exception=True)
+                product.save()
 
-        return super().create(request, *args, **kwargs)
+        return Response(origin_brands.values(), status=status.HTTP_200_OK)
 
 
 class CarModelViewSet(ModelViewSet):

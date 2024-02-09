@@ -55,13 +55,34 @@ class TowBrandSerializer (serializers.ModelSerializer):
 
 
 class ProductPartSupplierSerializer(serializers.ModelSerializer):
-    brands = serializers.ListField(write_only=True)
+    # brands = serializers.ListField(write_only=True)
     partBrands = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ProductPartSupplier
         fields = ['partSupplierId',
                   'productId', 'brands', 'count', 'partBrands', 'price']
+
+    # def create(self, validated_data):
+    #     brands_data = validated_data.pop('brands', [])  # Extract brands data
+
+    #     workshop = PartSupplier.objects.create(**validated_data)
+    #     print('brands_data', brands_data)
+    #     print(type(brands_data))
+    #     print("aaaa1234")
+    #     for brand_string in brands_data[0].split(','):
+    #         shopBrands = storeBrandsSerializer(
+    #             data={'partSupplierId': workshop.pk, 'brands': brand_string})
+    #         shopBrands.is_valid(raise_exception=True)
+    #         shopBrands.save()
+
+    #     return workshop
+
+    def get_partBrands(self, obj):
+        print(obj)
+        print(obj.pk)
+        Brand = storeBrands.objects.filter(partSupplierId=obj.pk)
+        return Brand.values_list("brands__name", flat=True)
 
 
 class PartSupplierSerializer (serializers.ModelSerializer):
@@ -72,7 +93,7 @@ class PartSupplierSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = PartSupplier
-        fields = ['user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'locationId', 'address',
+        fields = ['user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
                   'storeName', 'contactNumber', 'logo', 'avatar']
 
     def create(self, validated_data):
@@ -148,7 +169,7 @@ class WorkShopSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = WorkShop
-        fields = ['workshopOwnerId', 'brands', 'WorkShopBrands', 'originName', 'origin',  'locationId', 'address',
+        fields = ['workshopOwnerId', 'brands', 'WorkShopBrands', 'originName', 'origin',  'location', 'address',
                   'workshopName', 'currentCars', 'contactNumber',  'specialist', 'specialistName', 'avatar']
 
     def create(self, validated_data):
