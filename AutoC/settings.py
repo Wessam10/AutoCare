@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
+from firebase_admin import initialize_app, credentials
+from google.auth import load_credentials_from_file
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,6 +46,7 @@ INSTALLED_APPS = [
     'autocare',
     'rest_framework',
     'djoser',
+    'fcm_django',
 ]
 
 MIDDLEWARE = [
@@ -170,3 +174,26 @@ SIMPLE_JWT = {
 #     # ...
 # }
 AUTH_USER_MODEL = 'autocare.User'
+
+
+class CustomFirebaseCredentials(credentials.ApplicationDefault):
+    def __init__(self, account_file_path: str):
+        super().__init__()
+        self._account_file_path = account_file_path
+
+    def _load_credential(self):
+        if not self._g_credential:
+            self._g_credential, self._project_id = load_credentials_from_file(self._account_file_path,
+                                                                              scopes=credentials._scopes)
+
+
+custom_credentials = CustomFirebaseCredentials(
+    os.getenv('CUSTOM_GOOGLE_APPLICATION_CREDENTIALS'))
+FIREBASE_MESSAGING_APP = initialize_app(custom_credentials, name='messaging')
+
+FCM_DJANGO_SETTINGS = {
+    "DEFAULT_FIREBASE_APP": FIREBASE_MESSAGING_APP,
+    "APP_VERBOSE_NAME": "What ever name",
+    "ONE_DEVICE_PER_USER": False,
+    "DELETE_INACTIVE_DEVICES": False,
+}

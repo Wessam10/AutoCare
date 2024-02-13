@@ -25,7 +25,7 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, To
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, ImagesSerializer, TowCarsSerializer, StoreSerializer, storeBrandsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
+                         maintenanceSerializer, productSerializer, ImagesSerializer, CitySerializer, TowCarsSerializer, StoreSerializer, storeBrandsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
 
 
@@ -381,8 +381,10 @@ class WorkShopOwnerViewSet (ModelViewSet):
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
 
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
+    def partial_update(self, request, *args, **kwargs):
+        serialized = WorkShopOwnerSerializer(
+            request.user, data=request.data, partial=True)
+        return Response(status=status.HTTP_202_ACCEPTED)
 
 
 class OriginViewSet (ModelViewSet):
@@ -451,8 +453,9 @@ class TowCarViewSet(ModelViewSet):
         request.data._mutable = True
         request_data = request.data
         user = self.request.user.pk
+        print('before')
         carOwner = TowCarOwner.objects.get(user_id=user)
-
+        print('after')
         request.data["userId"] = carOwner.pk
 
         towCar_info = {}
@@ -460,13 +463,13 @@ class TowCarViewSet(ModelViewSet):
             print(user_data)
             towCar_info[user_data] = request_data.get(user_data, None)
         car = TowCarsSerializer(data=towCar_info)
-        print(towCar_info)
         car.is_valid(raise_exception=True)
+        print(TowCarsSerializer)
         print("1!!!!")
         workshopUser = car.save()
         print(workshopUser.pk)
 
-        return super().create(request, *args, **kwargs)
+        return Response(status=status.HTTP_200_OK)
 
 
 class SpecialistViewSet (ModelViewSet):
@@ -595,6 +598,11 @@ class StoreViewSet(ModelViewSet):
 class ImageViewSet(ModelViewSet):
     queryset = Images.objects.all()
     serializer_class = ImagesSerializer
+
+
+class CityViewSet(ModelViewSet):
+    queryset = City.objects.all()
+    serializer_class = CitySerializer
 
 
 @api_view(['GET', 'POST'])

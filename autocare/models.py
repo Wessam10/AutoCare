@@ -110,6 +110,7 @@ class WorkShop(models.Model):
     avatar = models.ImageField(upload_to='autocare/images', null=True)
     specialist = models.ForeignKey(
         Specialist, on_delete=models.CASCADE)
+    logo = models.ImageField(upload_to='autocare/images', null=True)
 
     def __str__(self):
         return self.workshopName
@@ -190,9 +191,7 @@ class TowCars(models.Model):
     carOrigin = models.ForeignKey(TowOrigin, on_delete=models.CASCADE)
     carBrand = models.ForeignKey(TowBrand, on_delete=models.DO_NOTHING)
     carYear = models.CharField(max_length=255)
-    carColor = models.CharField(max_length=255)
     plateNumber = models.CharField(max_length=255, unique=True)
-    avatar = models.ImageField(upload_to='autocare/images', null=True)
 
     def __str__(self):
         return self.carBrand.name
