@@ -149,7 +149,7 @@ class OriginSerializer (serializers.ModelSerializer):
 class TowOriginSerializer (serializers.ModelSerializer):
     class Meta:
         model = TowOrigin
-        fields = ['name']
+        fields = ['id', 'name']
 
 
 class SpecialistSerializer (serializers.ModelSerializer):
@@ -258,7 +258,7 @@ class TowCarsSerializer (serializers.ModelSerializer):
     class Meta:
         model = TowCars
         fields = ['userId', 'carBrand', 'carOrigin', 'coverageCity',
-                  'carYear', 'plateNumber']
+                  'carYear', 'plateNumber', 'available']
 
 
 class productSerializer (serializers.ModelSerializer):

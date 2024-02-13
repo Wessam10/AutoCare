@@ -10,6 +10,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import NotFound
 
 
 from . import models
@@ -91,7 +92,15 @@ class WorkShopViewSet (ModelViewSet):
     serializer_class = WorkShopSerializer
     # permission_classes = [IsAuthenticated, workshopOwnerAuth]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['origin']
+    filterset_fields = ['origin', 'specialist']
+
+    # def get_queryset(self):
+    #     user_id = self.request.user.pk
+    #     try:
+    #         car_owner = CarOwner.objects.get(user_id=user_id)
+    #         return Cars.objects.filter(userId=car_owner.pk).order_by('pk')
+    #     except CarOwner.DoesNotExist:
+    #         raise NotFound("Car owner not found.")
 
     def create(self, request, *args, **kwargs):
         print('wwww')
@@ -182,6 +191,14 @@ class CarsViewSet (ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_field = ['userId ']
 
+    def get_queryset(self):
+        user_id = self.request.user.pk
+        try:
+            car_owner = CarOwner.objects.get(user_id=user_id)
+            return Cars.objects.filter(userId=car_owner.pk).order_by('pk')
+        except CarOwner.DoesNotExist:
+            raise NotFound("Car owner not found.")
+
     def create(self, request, *args, **kwargs):
         print('aaaa')
         request.data._mutable = True
@@ -243,6 +260,8 @@ class PartSupplierViewSet (ModelViewSet):
 class productViewSet (ModelViewSet):
     queryset = Product.objects.all().order_by('pk')
     serializer_class = productSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['category']
     # permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
@@ -518,7 +537,17 @@ class favoriteViewSet (ModelViewSet):
 class ProductPartViewSet (ModelViewSet):
     queryset = ProductPartSupplier.objects.filter()
     serializer_class = ProductPartSupplierSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['partSupplierId']
     # permission_classes = [IsAuthenticated, PartSupplierAuth]
+
+    def get_queryset(self):
+        user_id = self.request.user.pk
+        try:
+            partSupplier = PartSupplier.objects.get(user_id=user_id)
+            return ProductPartSupplier.objects.filter(partSupplierId=partSupplier.pk).order_by('pk')
+        except PartSupplier.DoesNotExist:
+            raise NotFound("Part store not found.")
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True

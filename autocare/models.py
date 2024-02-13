@@ -192,6 +192,7 @@ class TowCars(models.Model):
     carBrand = models.ForeignKey(TowBrand, on_delete=models.DO_NOTHING)
     carYear = models.CharField(max_length=255)
     plateNumber = models.CharField(max_length=255, unique=True)
+    available = models.BooleanField(default=False)
 
     def __str__(self):
         return self.carBrand.name
