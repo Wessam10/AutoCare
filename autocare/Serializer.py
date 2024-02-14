@@ -10,6 +10,7 @@ class UserSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = User
+        # IF SOMTHING GOES WRONG
         fields = ['id', 'fullName',
                   'phoneNumber', 'email', 'avatar', 'password', 'user_type']
 
@@ -248,9 +249,12 @@ class RequestSerializer (serializers.ModelSerializer):
 
 
 class CarsSerializer (serializers.ModelSerializer):
+    name = serializers.CharField(
+        source='userId.user_id.fullName', read_only=True)
+
     class Meta:
         model = Cars
-        fields = ['userId', 'carBrand', 'carModel', 'carOrigin',
+        fields = ['userId', 'name', 'carBrand', 'carModel', 'carOrigin',
                   'carYear', 'carColor', 'plateNumber', 'avatar']
 
 
