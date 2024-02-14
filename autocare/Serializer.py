@@ -160,6 +160,8 @@ class SpecialistSerializer (serializers.ModelSerializer):
 
 
 class WorkShopSerializer (serializers.ModelSerializer):
+    ownerInfo = WorkShopOwnerSerializer(
+        source='workshopOwnerId', read_only=True)
     brands = serializers.ListField(write_only=True)
     WorkShopBrands = serializers.SerializerMethodField(read_only=True)
     originName = serializers.CharField(source='origin.name', read_only=True)
@@ -170,7 +172,7 @@ class WorkShopSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = WorkShop
-        fields = ['workshopOwnerId', 'brands', 'WorkShopBrands', 'originName', 'origin',  'location', 'address',
+        fields = ['workshopOwnerId', 'ownerInfo', 'brands', 'WorkShopBrands', 'originName', 'origin',  'location', 'address',
                   'workshopName', 'currentCars', 'contactNumber',  'specialist', 'specialistName', 'avatar', 'logo']
 
     def create(self, validated_data):
@@ -251,10 +253,16 @@ class RequestSerializer (serializers.ModelSerializer):
 class CarsSerializer (serializers.ModelSerializer):
     name = serializers.CharField(
         source='userId.user_id.fullName', read_only=True)
+    brandName = serializers.CharField(
+        source='carBrand.name', read_only=True)
+    originName = serializers.CharField(
+        source='carOrigin.name', read_only=True)
+    modelName = serializers.CharField(
+        source='carModel.name', read_only=True)
 
     class Meta:
         model = Cars
-        fields = ['userId', 'name', 'carBrand', 'carModel', 'carOrigin',
+        fields = ['userId', 'name', 'carBrand', 'brandName', 'carModel', 'modelName', 'carOrigin', 'originName',
                   'carYear', 'carColor', 'plateNumber', 'avatar']
 
 

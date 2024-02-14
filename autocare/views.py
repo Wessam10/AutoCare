@@ -92,7 +92,7 @@ class WorkShopViewSet (ModelViewSet):
     serializer_class = WorkShopSerializer
     # permission_classes = [IsAuthenticated, workshopOwnerAuth]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['origin', 'specialist']
+    filterset_fields = ['origin', 'specialist', 'origin__brand']
 
     # def get_queryset(self):
     #     user_id = self.request.user.pk
@@ -214,6 +214,8 @@ class CarsViewSet (ModelViewSet):
 class PartSupplierViewSet (ModelViewSet):
     queryset = PartSupplier.objects.all().order_by('pk')
     serializer_class = PartSupplierSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['origin__brand']
     # permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
