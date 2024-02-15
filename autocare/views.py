@@ -15,7 +15,7 @@ from rest_framework.exceptions import NotFound
 
 from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
-                     TowCarOwner, TowRequest, User, WorkShop, WorkShopImages,
+                     TowCarOwner, TowRequest, User, WorkShop, WorkShopImages, workshopBrands,
                      WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
                      Product, TowCars, CarModel, TowBrand, TowOrigin, storeBrands, Images, Store)
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
@@ -92,7 +92,19 @@ class WorkShopViewSet (ModelViewSet):
     serializer_class = WorkShopSerializer
     # permission_classes = [IsAuthenticated, workshopOwnerAuth]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['origin', 'specialist', 'origin__brand']
+    filterset_fields = ['origin', 'specialist']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        brand_name = self.request.query_params.get('brands')
+        print(brand_name)
+
+        if brand_name:
+            queryset = WorkShop.objects.filter(workshopbrands=brand_name)
+            print(queryset)
+            if not queryset.exists():
+                raise NotFound("Workshops not found for specified brand.")
+        return queryset
 
     # def get_queryset(self):
     #     user_id = self.request.user.pk
@@ -493,6 +505,19 @@ class TowCarViewSet(ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
+class ToggleTowCarAvailability(generics.UpdateAPIView):
+    queryset = TowCars.objects.all()
+    serializer_class = TowCarsSerializer
+    lookup_field = 'pk'
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.available = not instance.available
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+
 class SpecialistViewSet (ModelViewSet):
     queryset = Specialist.objects.all()
     serializer_class = specialistSerializer
@@ -541,15 +566,6 @@ class ProductPartViewSet (ModelViewSet):
     serializer_class = ProductPartSupplierSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['partSupplierId']
-    # permission_classes = [IsAuthenticated, PartSupplierAuth]
-
-    def get_queryset(self):
-        user_id = self.request.user.pk
-        try:
-            partSupplier = PartSupplier.objects.get(user_id=user_id)
-            return ProductPartSupplier.objects.filter(partSupplierId=partSupplier.pk).order_by('pk')
-        except PartSupplier.DoesNotExist:
-            raise NotFound("Part store not found.")
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True

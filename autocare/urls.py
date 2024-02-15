@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from . import views
 from django.urls import path, include
-from .views import MyTokenObtainPairView
+from .views import MyTokenObtainPairView, ToggleTowCarAvailability
 
 
 routers = DefaultRouter()
@@ -29,6 +29,8 @@ routers.register('AssignProduct', views.ProductPartViewSet)
 routers.register('CarModel', views.CarModelViewSet)
 routers.register('TowBrand', views.TowBrandViewSet)
 routers.register('TowOrigin', views.TowOriginViewSet)
+# routers.register('ToggleTowCarAvailability',
+#                  views.ToggleTowCarAvailability, basename="Availability")
 routers.register('ImageViewSet', views.ImageViewSet, basename="image")
 routers.register('City', views.CityViewSet, basename="city")
 
@@ -41,6 +43,7 @@ urlpatterns = [
     path('add', views.add),
     path('AddCarModel', views.AddCarModel),
     path('userType', views.userType),
+    path('toggleAvailability/<int:pk>/', ToggleTowCarAvailability.as_view()),
     path('AddSpecialist', views.AddSpecialist),
     path('AddOrigin', views.AddOrigin),
     path('AddCity', views.AddCity),

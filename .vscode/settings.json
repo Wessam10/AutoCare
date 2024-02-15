@@ -22,6 +22,7 @@
     "simplejwt",
     "timedelta",
     "usertype",
-    "viewsets"
+    "viewsets",
+    "workshopbrands"
   ]
 }

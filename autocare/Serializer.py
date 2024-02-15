@@ -275,10 +275,12 @@ class TowCarsSerializer (serializers.ModelSerializer):
 
 class productSerializer (serializers.ModelSerializer):
     productCode = serializers.CharField(source='code', read_only=True)
+    categoryName = serializers.CharField(
+        source='category.name', read_only=True)
 
     class Meta:
         model = Product
-        fields = ['productName', 'category',
+        fields = ['productName', 'category', 'categoryName',
                   'description', 'productCode', 'productImage']
 
     def create(self, validated_data):
