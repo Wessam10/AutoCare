@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from . import views
 from django.urls import path, include
-from .views import MyTokenObtainPairView, ToggleTowCarAvailability
+from .views import MyTokenObtainPairView, ToggleTowCarAvailability, CarOwnerUpdateAPIView
 
 
 routers = DefaultRouter()
@@ -44,6 +44,8 @@ urlpatterns = [
     path('AddCarModel', views.AddCarModel),
     path('userType', views.userType),
     path('toggleAvailability/<int:pk>/', ToggleTowCarAvailability.as_view()),
+    path('car-owner/update/', CarOwnerUpdateAPIView.as_view(),
+         name='car-owner-update'),
     path('AddSpecialist', views.AddSpecialist),
     path('AddOrigin', views.AddOrigin),
     path('AddCity', views.AddCity),

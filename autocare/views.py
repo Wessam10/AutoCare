@@ -11,6 +11,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import NotFound
+from rest_framework.views import APIView
 
 
 from . import models
@@ -640,6 +641,22 @@ class StoreViewSet(ModelViewSet):
         request.data["partSupplierId"] = ShopOwner.pk
         print('1')
         return super().create(request, *args, **kwargs)
+
+
+class CarOwnerUpdateAPIView(APIView):
+    def put(self, request, *args, **kwargs):
+        car_owner = CarOwner.objects.get(user_id=request.user)
+        user = car_owner.user_id
+
+        user.avatar = request.data.get('avatar', user.avatar)
+        user.email = request.data.get('email', user.email)
+        user.fullName = request.data.get('fullName', user.fullName)
+        user.set_password(request.data.get('password', user.password))
+        user.phoneNumber = request.data.get('phoneNumber', user.phoneNumber)
+
+        user.save()
+
+        return Response(status=status.HTTP_200_OK)
 
 
 class ImageViewSet(ModelViewSet):

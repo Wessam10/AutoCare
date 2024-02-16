@@ -48,7 +48,8 @@ class BrandSerializer (serializers.ModelSerializer):
 
 
 class TowBrandSerializer (serializers.ModelSerializer):
-    originName = serializers.CharField(source='origin.name', read_only=True)
+    originName = originName = serializers.CharField(
+        source='origin.name', read_only=True)
 
     class Meta:
         model = TowBrand
@@ -58,11 +59,23 @@ class TowBrandSerializer (serializers.ModelSerializer):
 class ProductPartSupplierSerializer(serializers.ModelSerializer):
     # brands = serializers.ListField(write_only=True)
     partBrands = serializers.SerializerMethodField(read_only=True)
+    partBrandsName = serializers.SerializerMethodField(read_only=True)
+    productName = serializers.CharField(
+        source='productId.productName', read_only=True)
+    category = serializers.CharField(
+        source='productId.category', read_only=True)
+    description = serializers.CharField(
+        source='productId.description', read_only=True)
+    productImage = serializers.CharField(
+        source='productId.productImage', read_only=True)
+    available = serializers.CharField(
+        source='productId.available', read_only=True)
 
     class Meta:
         model = ProductPartSupplier
         fields = ['partSupplierId',
-                  'productId', 'brands', 'count', 'partBrands', 'price']
+                  'productId', 'productName', 'category', 'description', 'productImage',
+                  'available', 'brands', 'count', 'partBrandsName', 'partBrands', 'price']
 
     # def create(self, validated_data):
     #     brands_data = validated_data.pop('brands', [])  # Extract brands data
@@ -85,37 +98,43 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
         Brand = storeBrands.objects.filter(partSupplierId=obj.pk)
         return Brand.values_list("brands__name", flat=True)
 
+    def get_partBrandsName(self, obj):
+        brand_id = obj.brands_id
+        brand_name = Brand.objects.get(id=brand_id).name
+        return brand_name
 
-class PartSupplierSerializer (serializers.ModelSerializer):
-    brands = serializers.ListField(write_only=True)
-    storeBrand = serializers.SerializerMethodField(read_only=True)
-    originName = serializers.CharField(source='origin.name', read_only=True)
-    user = UserSerializer(source='user_id', read_only=True)
+    class PartSupplierSerializer (serializers.ModelSerializer):
+        brands = serializers.ListField(write_only=True)
+        storeBrand = serializers.SerializerMethodField(read_only=True)
+        originName = serializers.CharField(
+            source='origin.name', read_only=True)
+        user = UserSerializer(source='user_id', read_only=True)
 
-    class Meta:
-        model = PartSupplier
-        fields = ['user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
-                  'storeName', 'contactNumber', 'logo', 'avatar']
+        class Meta:
+            model = PartSupplier
+            fields = ['user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
+                      'storeName', 'contactNumber', 'logo', 'avatar']
 
-    def create(self, validated_data):
-        brands_data = validated_data.pop('brands', [])  # Extract brands data
+        def create(self, validated_data):
+            brands_data = validated_data.pop(
+                'brands', [])  # Extract brands data
 
-        workshop = PartSupplier.objects.create(**validated_data)
-        print('brands_data', brands_data)
-        print(type(brands_data))
-        for brand_string in brands_data[0].split(','):
-            shopBrands = storeBrandsSerializer(
-                data={'partSupplierId': workshop.pk, 'brands': brand_string})
-            shopBrands.is_valid(raise_exception=True)
-            shopBrands.save()
+            workshop = PartSupplier.objects.create(**validated_data)
+            print('brands_data', brands_data)
+            print(type(brands_data))
+            for brand_string in brands_data[0].split(','):
+                shopBrands = storeBrandsSerializer(
+                    data={'partSupplierId': workshop.pk, 'brands': brand_string})
+                shopBrands.is_valid(raise_exception=True)
+                shopBrands.save()
 
-        return workshop
+            return workshop
 
-    def get_storeBrand(self, obj):
-        print(obj)
-        print(obj.pk)
-        Brand = storeBrands.objects.filter(partSupplierId=obj.pk)
-        return Brand.values_list("brands__name", flat=True)
+        def get_storeBrand(self, obj):
+            print(obj)
+            print(obj.pk)
+            Brand = storeBrands.objects.filter(partSupplierId=obj.pk)
+            return Brand.values_list("brands__name", flat=True)
 
 
 class WorkShopOwnerSerializer (serializers.ModelSerializer):
