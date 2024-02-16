@@ -644,8 +644,8 @@ class StoreViewSet(ModelViewSet):
 
 
 class CarOwnerUpdateAPIView(APIView):
-    def put(self, request, *args, **kwargs):
-        car_owner = CarOwner.objects.get(user_id=request.user)
+    def put(self, request, pk, *args, **kwargs):
+        car_owner = CarOwner.objects.get(user_id=pk)
         user = car_owner.user_id
 
         user.avatar = request.data.get('avatar', user.avatar)

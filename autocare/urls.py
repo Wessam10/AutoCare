@@ -44,7 +44,7 @@ urlpatterns = [
     path('AddCarModel', views.AddCarModel),
     path('userType', views.userType),
     path('toggleAvailability/<int:pk>/', ToggleTowCarAvailability.as_view()),
-    path('car-owner/update/', CarOwnerUpdateAPIView.as_view(),
+    path('car-owner/update/<int:pk>/', CarOwnerUpdateAPIView.as_view(),
          name='car-owner-update'),
     path('AddSpecialist', views.AddSpecialist),
     path('AddOrigin', views.AddOrigin),
