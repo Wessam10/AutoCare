@@ -237,6 +237,9 @@ class workshopBrands (models.Model):
     brands = models.ForeignKey(Brand, on_delete=models.CASCADE)
     workshop = models.ForeignKey(WorkShop, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.brands.name
+
 
 class ProductPartSupplier(models.Model):
     partSupplierId = models.ForeignKey(

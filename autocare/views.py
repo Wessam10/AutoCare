@@ -99,13 +99,17 @@ class WorkShopViewSet (ModelViewSet):
         queryset = super().get_queryset()
         brand_name = self.request.query_params.get('brands')
         print(brand_name)
-
+        queryset1 = []
         if brand_name:
-            queryset = WorkShop.objects.filter(workshopbrands=brand_name)
-            print(queryset)
-            if not queryset.exists():
-                raise NotFound("Workshops not found for specified brand.")
-        return queryset
+            queryset1 = workshopBrands.objects.filter(brands=brand_name)
+            print(queryset1.values_list("workshop", flat=True))
+            if not queryset1.exists():
+                raise NotFound("Workshops not found for the specified brand.")
+            print(queryset1)
+        result = WorkShop.objects.filter(
+            id__in=queryset1.values_list("workshop", flat=True))
+        print(result.values_list("origin", flat=True))
+        return result
 
     # def get_queryset(self):
     #     user_id = self.request.user.pk
