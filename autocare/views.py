@@ -242,26 +242,26 @@ class PartSupplierViewSet (ModelViewSet):
     filterset_fields = ['origin']
     # permission_classes = [IsAuthenticated]
 
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     brand_name = self.request.query_params.get('brands')
-    #     print(brand_name)
-    #     queryset1 = []
-    #     if brand_name:
-    #         queryset1 = storeBrands.objects.filter(brands=brand_name)
-    #         print('quer')
-    #         print(queryset1)
-    #         print(queryset1.values_list("partSupplierId", flat=True))
-    #         print('quer')
-    #         if not queryset1.exists():
-    #             print('quer')
-    #             raise NotFound(
-    #                 "PartSupplier not found for the specified brand.")
-    #         print(queryset1)
-    #     result = PartSupplier.objects.filter(
-    #         id__in=queryset1.values_list("partSupplierId", flat=True))
-    #     print(result.values_list("origin", flat=True))
-    #     return result
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        brand_name = self.request.query_params.get('brands')
+        print(brand_name)
+        queryset1 = []
+        if brand_name:
+            queryset1 = storeBrands.objects.filter(brands=brand_name)
+            print('quer')
+            print(queryset1)
+            print(queryset1.values_list("partSupplierId", flat=True))
+            print('quer')
+            if not queryset1.exists():
+                print('quer')
+                raise NotFound(
+                    "PartSupplier not found for the specified brand.")
+            print(queryset1)
+        result = PartSupplier.objects.filter(
+            id__in=queryset1.values_list("partSupplierId", flat=True))
+        print(result.values_list("origin", flat=True))
+        return result
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True

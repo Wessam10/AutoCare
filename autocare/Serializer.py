@@ -114,7 +114,7 @@ class PartSupplierSerializer (serializers.ModelSerializer):
     class Meta:
         model = PartSupplier
         fields = ['user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
-                  'storeName', 'contactNumber', 'logo', 'avatar']
+                  'storeName', 'contactNumber', 'logo', 'storeAvatar']
 
     def create(self, validated_data):
         brands_data = validated_data.pop(
