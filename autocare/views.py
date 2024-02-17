@@ -120,10 +120,14 @@ class WorkShopViewSet (ModelViewSet):
     #         raise NotFound("Car owner not found.")
 
     def create(self, request, *args, **kwargs):
-        print('wwww')
-        # TODO BTING ID FORM REQUEST AND ADD IT TO DATA
-        request.data._mutable = True
         user = self.request.user.pk
+        shop_owner = WorkShopOwner.objects.get(user_id=user)
+
+    # Check if the shop owner already has a workshop
+        if WorkShop.objects.filter(workshopOwnerId=shop_owner.pk).exists():
+            return Response("You already have a workshop and cannot create another.", status=status.HTTP_400_BAD_REQUEST)
+
+        request.data._mutable = True
         print(request.data)
         ShopOwner = WorkShopOwner.objects.get(user_id=user)
         print(ShopOwner)
@@ -180,6 +184,9 @@ class CarOwnerViewSet (ModelViewSet):
             userInfo[user_data] = request_data.get(user_data, None)
 
         user = UserSerializer(data=userInfo)
+        user.is_valid()
+        if user.errors:
+            print(user.errors)
         user.is_valid(raise_exception=True)
         user_instance = user.save()
         print('aaaa')
@@ -232,8 +239,29 @@ class PartSupplierViewSet (ModelViewSet):
     queryset = PartSupplier.objects.all().order_by('pk')
     serializer_class = PartSupplierSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['origin__brand']
+    filterset_fields = ['origin']
     # permission_classes = [IsAuthenticated]
+
+    # def get_queryset(self):
+    #     queryset = super().get_queryset()
+    #     brand_name = self.request.query_params.get('brands')
+    #     print(brand_name)
+    #     queryset1 = []
+    #     if brand_name:
+    #         queryset1 = storeBrands.objects.filter(brands=brand_name)
+    #         print('quer')
+    #         print(queryset1)
+    #         print(queryset1.values_list("partSupplierId", flat=True))
+    #         print('quer')
+    #         if not queryset1.exists():
+    #             print('quer')
+    #             raise NotFound(
+    #                 "PartSupplier not found for the specified brand.")
+    #         print(queryset1)
+    #     result = PartSupplier.objects.filter(
+    #         id__in=queryset1.values_list("partSupplierId", flat=True))
+    #     print(result.values_list("origin", flat=True))
+    #     return result
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
@@ -252,6 +280,9 @@ class PartSupplierViewSet (ModelViewSet):
             print(user_data)
             userInfo[user_data] = request_data.get(user_data, None)
         user = UserSerializer(data=userInfo)
+        user.is_valid()
+        if user.errors:
+            print(user.errors)
         user.is_valid(raise_exception=True)
         user_instance = user.save()
         print('aaaa')
@@ -325,6 +356,9 @@ class TowCarOwnerViewSet (ModelViewSet):
             user_info[user_data] = request_data.get(user_data, None)
 
         user = UserSerializer(data=user_info)
+        user.is_valid()
+        if user.errors:
+            print(user.errors)
         user.is_valid(raise_exception=True)
         workshopUser = user.save()
         request_data["user_id"] = workshopUser.pk
@@ -393,6 +427,9 @@ class WorkShopOwnerViewSet (ModelViewSet):
             user_info[user_data] = request_data.get(user_data, None)
 
         user = UserSerializer(data=user_info)
+        user.is_valid()
+        if user.errors:
+            print(user.errors)
         user.is_valid(raise_exception=True)
         workshopUser = user.save()
         workshopUser
@@ -501,6 +538,8 @@ class TowCarViewSet(ModelViewSet):
             print(user_data)
             towCar_info[user_data] = request_data.get(user_data, None)
         car = TowCarsSerializer(data=towCar_info)
+        if car.errors:
+            print(car.errors)
         car.is_valid(raise_exception=True)
         print(TowCarsSerializer)
         print("1!!!!")
@@ -610,6 +649,9 @@ class ProductPartViewSet (ModelViewSet):
                 print(i.brands.pk)
                 print(product_info)
                 product = ProductPartSupplierSerializer(data=product_info)
+                if product.errors:
+                    print(product.errors)
+
                 product.is_valid(raise_exception=True)
                 product.save()
 
@@ -659,6 +701,64 @@ class CarOwnerUpdateAPIView(APIView):
         user.phoneNumber = request.data.get('phoneNumber', user.phoneNumber)
 
         user.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class WorkShopUpdateAPIView(APIView):
+    def put(self, request, pk, *args, **kwargs):
+        workshop_owner = WorkShopOwner.objects.get(user_id=pk)
+        print(workshop_owner)
+        user = workshop_owner.user_id
+        user.email = request.data.get('email', user.email)
+        user.fullName = request.data.get('fullName', user.fullName)
+        user.set_password(request.data.get('password', user.password))
+        user.phoneNumber = request.data.get('phoneNumber', user.phoneNumber)
+        user.avatar = request.data.get('avatar', user.avatar)
+
+        user.save()
+
+        workshop = WorkShop.objects.get(workshopOwnerId=workshop_owner)
+        workshop.logo = request.data.get('logo', workshop.logo)
+        workshop.workshopName = request.data.get(
+            'workshopName', workshop.workshopName)
+        workshop.contactNumber = request.data.get(
+            'contactNumber', workshop.workshopName)
+        workshop.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class PartSupplierUpdateAPIView(APIView):
+    def put(self, request, pk, *args, **kwargs):
+        #     print('aaaaaaaaaa')
+        #     instance = get_object_or_404(User, pk=pk)
+        #     print('0aaaaaaaaaa')
+        #     serializer = PartSupplierSerializer(instance, data=request.data)
+        #     print('1aaaaaaaaaa')
+        #     if serializer.is_valid():
+        #         serializer.save
+        #         return Response(serializer.data)
+        #     else:
+        #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        part_supplier = PartSupplier.objects.get(user_id=pk)
+        user = part_supplier.user_id
+
+        user.avatar = request.data.get('avatar', user.avatar)
+        user.email = request.data.get('email', user.email)
+        user.fullName = request.data.get('fullName', user.fullName)
+        user.set_password(request.data.get('password', user.password))
+        user.phoneNumber = request.data.get('phoneNumber', user.phoneNumber)
+
+        user.save()
+
+        part_supplier.logo = request.data.get('logo', part_supplier.logo)
+        part_supplier.storeName = request.data.get(
+            'storeName', part_supplier.storeName)
+        part_supplier.contactNumber = request.data.get(
+            'contactNumber', part_supplier.contactNumber)
+
+        part_supplier.save()
 
         return Response(status=status.HTTP_200_OK)
 
