@@ -99,15 +99,18 @@ class WorkShopViewSet (ModelViewSet):
         queryset = super().get_queryset()
         brand_name = self.request.query_params.get('brands')
         print(brand_name)
-        queryset1 = []
+        queryset1 = workshopBrands.objects.none()  # Initialize as an empty queryset
         if brand_name:
             queryset1 = workshopBrands.objects.filter(brands=brand_name)
             print(queryset1.values_list("workshop", flat=True))
             if not queryset1.exists():
                 raise NotFound("Workshops not found for the specified brand.")
             print(queryset1)
-        result = WorkShop.objects.filter(
-            id__in=queryset1.values_list("workshop", flat=True))
+        if queryset1.exists():
+            result = WorkShop.objects.filter(
+                id__in=queryset1.values_list("workshop", flat=True))
+        else:
+            result = queryset
         print(result.values_list("origin", flat=True))
         return result
 
@@ -246,7 +249,7 @@ class PartSupplierViewSet (ModelViewSet):
         queryset = super().get_queryset()
         brand_name = self.request.query_params.get('brands')
         print(brand_name)
-        queryset1 = []
+        queryset1 = storeBrands.objects.none()  # Initialize as an empty queryset
         if brand_name:
             queryset1 = storeBrands.objects.filter(brands=brand_name)
             print('quer')
@@ -257,9 +260,12 @@ class PartSupplierViewSet (ModelViewSet):
                 print('quer')
                 raise NotFound(
                     "PartSupplier not found for the specified brand.")
-            print(queryset1)
-        result = PartSupplier.objects.filter(
-            id__in=queryset1.values_list("partSupplierId", flat=True))
+                print(queryset1)
+        if queryset1.exists():
+            result = PartSupplier.objects.filter(
+                id__in=queryset1.values_list("partSupplierId", flat=True))
+        else:
+            result = queryset
         print(result.values_list("origin", flat=True))
         return result
 
