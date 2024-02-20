@@ -18,7 +18,7 @@ from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages, workshopBrands,
                      WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
-                     Product, TowCars, CarModel, TowBrand, TowOrigin, storeBrands, Images, Store)
+                     Product, TowCars, CarModel, TowBrand, TowOrigin, storeBrands, Images, Store, Status, TransactionStatus, RequestType)
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, TowBrandSerializer, TowOriginSerializer,
                          OriginSerializer, PartSupplierSerializer,
@@ -27,7 +27,7 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, To
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, ImagesSerializer, CitySerializer, TowCarsSerializer, StoreSerializer, storeBrandsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
+                         maintenanceSerializer, productSerializer, ImagesSerializer, RequestTypeSerializer, TransactionStatusSerializer, StatusSerializer, CitySerializer, TowCarsSerializer, StoreSerializer, storeBrandsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
 
 
@@ -492,7 +492,203 @@ class locViewSet (ModelViewSet):
 class MaintenanceViewSet (ModelViewSet):
     queryset = maintenance.objects.all().order_by('pk')
     serializer_class = maintenanceSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        user = self.request.user.pk
+        request_data = request.data
+        carOwner = CarOwner.objects.get(user_id=user)
+        request.data._mutable = True
+        request.data["userId"] = carOwner.pk
+        request.data["transactionStatus"] = 1
+        request_info = {}
+
+        for data in request_data:
+            print(data)
+            request_info[data] = request_data.get(data, None)
+
+        serializer = RequestSerializer(data=request_info)
+        serializer.is_valid()
+        if serializer.errors:
+            print(serializer.errors)
+        serializer.is_valid(raise_exception=True)
+        r1 = serializer.save()
+
+        request_data["requestId"] = r1.pk
+        print(request_data)
+        k = maintenanceSerializer(data=request_data,)
+        k.is_valid()
+        k.save()
+        print(k.is_valid())
+
+        return Response(request.data, status=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        request_id = kwargs.get('pk')
+        request_data = request.data
+        user = self.request.user.pk
+        request.data._mutable = True
+        carOwner = CarOwner.objects.get(user_id=user)
+        shop = Request.objects.get(id=request_id)
+        mai = maintenance.objects.get(requestId=request_id)
+        request.data["transactionStatus"] = 2
+        print(shop.pk)
+        request.data["userId"] = carOwner.pk
+        request.data['requestId'] = request_id
+        print('1234')
+        request.data["carsId"] = shop.carsId.pk
+        print('1235')
+        request.data['requestType'] = shop.requestType
+        print('12356')
+        request.data['workshopId'] = shop.workshopId.pk
+        print('12357')
+        serializer = RequestSerializer(
+            instance=shop, data=request_data, partial=True)
+        print(shop)
+        serializer.is_valid(raise_exception=True)
+        print('1235789')
+        serializer.update(instance=shop,
+                          validated_data=serializer.validated_data)
+        k = maintenanceSerializer(
+            instance=shop, data=request_data, partial=True)
+        k.is_valid(raise_exception=True)
+        k.update(instance=shop, validated_data=k.validated_data)
+        print('123578910')
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class shopMaintenanceViewSet (ModelViewSet):
+    queryset = maintenance.objects.all().order_by('pk')
+    serializer_class = maintenanceSerializer
+
+    def update(self, request, *args, **kwargs):
+        request_id = kwargs.get('pk')
+        request_data = request.data
+        user = self.request.user.pk
+        request.data._mutable = True
+        shop = Request.objects.get(id=request_id)
+        mai = maintenance.objects.get(requestId=request_id)
+        carOwner = shop.userId
+        request.data["transactionStatus"] = 3
+        request.data["userId"] = carOwner.pk
+        request.data['requestId'] = request_id
+        request.data["carsId"] = shop.carsId.pk
+        request.data['requestType'] = shop.requestType
+        request.data['workshopId'] = shop.workshopId.pk
+
+        serializer = RequestSerializer(
+            instance=shop, data=request_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(
+            instance=shop, validated_data=serializer.validated_data)
+        k = maintenanceSerializer(
+            instance=shop, data=request_data, partial=True)
+        k.is_valid(raise_exception=True)
+        k.update(instance=shop, validated_data=k.validated_data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class shop1MaintenanceViewSet (ModelViewSet):
+    queryset = maintenance.objects.all().order_by('pk')
+    serializer_class = maintenanceSerializer
+
+    def update(self, request, *args, **kwargs):
+        request_id = kwargs.get('pk')
+        request_data = request.data
+        print(request_data)
+        user = self.request.user.pk
+        request.data._mutable = True
+        shop = Request.objects.get(id=request_id)
+        mai = maintenance.objects.get(requestId=request_id)
+        carOwner = shop.userId
+        request.data["transactionStatus"] = 4
+        request.data["userId"] = carOwner.pk
+        request.data['requestId'] = request_id
+        request.data["carsId"] = shop.carsId.pk
+        request.data['requestType'] = shop.requestType
+        request.data['workshopId'] = shop.workshopId.pk
+
+        serializer = RequestSerializer(
+            instance=shop, data=request_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(
+            instance=shop, validated_data=serializer.validated_data)
+        k = maintenanceSerializer(
+            instance=mai, data=request_data, partial=True)
+        k.is_valid(raise_exception=True)
+        k.update(instance=mai, validated_data=k.validated_data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AcceptMaintenanceViewSet (ModelViewSet):
+    queryset = maintenance.objects.all().order_by('pk')
+    serializer_class = maintenanceSerializer
+
+    def update(self, request, *args, **kwargs):
+        request_id = kwargs.get('pk')
+        request_data = request.data
+        user = self.request.user.pk
+        request.data._mutable = True
+        shop = Request.objects.get(id=request_id)
+        carOwner = shop.userId
+        mai = maintenance.objects.get(requestId=request_id)
+        request.data["transactionStatus"] = 5
+        print(shop.pk)
+        request.data["userId"] = carOwner.pk
+        request.data['requestId'] = request_id
+        print('1234')
+        request.data["carsId"] = shop.carsId.pk
+        print('1235')
+        request.data['requestType'] = shop.requestType
+        print('12356')
+        request.data['workshopId'] = shop.workshopId.pk
+        print('12357')
+        serializer = RequestSerializer(
+            instance=shop, data=request_data, partial=True)
+        print(shop)
+        serializer.is_valid(raise_exception=True)
+        print('1235789')
+        serializer.update(instance=shop,
+                          validated_data=serializer.validated_data)
+        k = maintenanceSerializer(
+            instance=shop, data=request_data, partial=True)
+        k.is_valid(raise_exception=True)
+        k.update(instance=shop, validated_data=k.validated_data)
+        print('123578910')
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class shop2MaintenanceViewSet (ModelViewSet):
+    queryset = maintenance.objects.all().order_by('pk')
+    serializer_class = maintenanceSerializer
+
+    def update(self, request, *args, **kwargs):
+        request_id = kwargs.get('pk')
+        request_data = request.data
+        user = self.request.user.pk
+        request.data._mutable = True
+        shop = Request.objects.get(id=request_id)
+        mai = maintenance.objects.get(requestId=request_id)
+        carOwner = shop.userId
+        request.data["transactionStatus"] = 6
+        request.data["userId"] = carOwner.pk
+        request.data['requestId'] = request_id
+        request.data["carsId"] = shop.carsId.pk
+        request.data['requestType'] = shop.requestType
+        request.data['workshopId'] = shop.workshopId.pk
+
+        serializer = RequestSerializer(
+            instance=shop, data=request_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(
+            instance=shop, validated_data=serializer.validated_data)
+        k = maintenanceSerializer(
+            instance=shop, data=request_data, partial=True)
+        k.is_valid(raise_exception=True)
+        k.update(instance=shop, validated_data=k.validated_data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class userImagesViewSet(generics.RetrieveUpdateAPIView):
@@ -638,23 +834,16 @@ class ProductPartViewSet (ModelViewSet):
         print(brands_list)
         origin_brands = storeBrands.objects.filter(
             partSupplierId=part_supplier.pk, brands__in=brands_list)
-        #     brands_list = brands.split(',')
-        #     for brand in brands_list:
-        #         b = Brand.objects.filter(id=brand).first()
-        #         a = int(brand)
-        #         print(type(a))
-        #         print(brands)
-        #         print(b)
-        #         if b:
-        #             origin_brands = storeBrands.objects.filter(
-        #                 partSupplierId=part_supplier.pk, brands=[16, 17])
+
         print(origin_brands.count(), brands_list.__len__())
         if origin_brands.count() == brands_list.__len__():
             for i in origin_brands:
                 product_info["brands"] = i.brands.pk
                 print(i.brands.pk)
                 print(product_info)
+                print('112344')
                 product = ProductPartSupplierSerializer(data=product_info)
+                product.is_valid()
                 if product.errors:
                     print(product.errors)
 
@@ -873,6 +1062,21 @@ def add(request):
 class locationsViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+
+class StatusViewSet(ModelViewSet):
+    queryset = Status.objects.all()
+    serializer_class = StatusSerializer
+
+
+class TransactionStatusViewSet(ModelViewSet):
+    queryset = TransactionStatus.objects.all()
+    serializer_class = TransactionStatusSerializer
+
+
+class RequestTypeViewSet(ModelViewSet):
+    queryset = RequestType.objects.all()
+    serializer_class = RequestTypeSerializer
 
 
 @api_view(['GET'])

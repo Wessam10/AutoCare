@@ -1,14 +1,19 @@
 from rest_framework.routers import DefaultRouter
 from . import views
 from django.urls import path, include
-from .views import MyTokenObtainPairView, ToggleTowCarAvailability, CarOwnerUpdateAPIView, PartSupplierUpdateAPIView, WorkShopUpdateAPIView
+from .views import MyTokenObtainPairView, ToggleTowCarAvailability,  CarOwnerUpdateAPIView, PartSupplierUpdateAPIView, WorkShopUpdateAPIView, RequestViewSet
 
 
 routers = DefaultRouter()
 routers.register('AddBrand', views.BrandViewSet)
 routers.register('AddCheckup', views.CheckupViewSet)
 routers.register('AddLocation', views.locViewSet)
-routers.register('AddMaintenance', views.MaintenanceViewSet)
+routers.register('CarMaintenance', views.MaintenanceViewSet)
+routers.register('shopMaintenance', views.shopMaintenanceViewSet)
+routers.register('evaluateMaintenance', views.shop1MaintenanceViewSet)
+routers.register('AcceptPriceDealMaintenance',
+                 views.AcceptMaintenanceViewSet)
+routers.register('FinishedMaintenance', views.shop1MaintenanceViewSet)
 routers.register('AddOrigin', views.OriginViewSet)
 routers.register('AddRequest', views.RequestViewSet)
 routers.register('AddProduct', views.productViewSet)
@@ -29,6 +34,9 @@ routers.register('AssignProduct', views.ProductPartViewSet)
 routers.register('CarModel', views.CarModelViewSet)
 routers.register('TowBrand', views.TowBrandViewSet)
 routers.register('TowOrigin', views.TowOriginViewSet)
+routers.register('Status', views.StatusViewSet)
+routers.register('TransactionStatus', views.TransactionStatusViewSet)
+routers.register('RequestType', views.RequestTypeViewSet)
 # routers.register('ToggleTowCarAvailability',
 #                  views.ToggleTowCarAvailability, basename="Availability")
 routers.register('ImageViewSet', views.ImageViewSet, basename="image")
@@ -50,6 +58,8 @@ urlpatterns = [
          WorkShopUpdateAPIView.as_view(), name='workshop-update'),
     path('part-supplier/update/<int:pk>/', PartSupplierUpdateAPIView.as_view(),
          name='part-supplier-update'),
+    #     path('requests/<int:pk>/', RequestViewSet.as_view(
+    #         {'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='request-detail'),
     path('AddSpecialist', views.AddSpecialist),
     path('AddOrigin', views.AddOrigin),
     path('AddCity', views.AddCity),

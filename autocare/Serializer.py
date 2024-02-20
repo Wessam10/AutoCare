@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WorkShop, CarModel, workshopBrands, Images, TowCars, City, Specialist, TowBrand, Store, storeBrands, TowOrigin, ProductPartSupplier, Request, Specialist, Brand, CarOwner, Cars,  PartSupplier, Product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
+from .models import WorkShop, CarModel, workshopBrands, Images, RequestType, TowCars, City, TransactionStatus, Status, Specialist, TowBrand, Store, storeBrands, TowOrigin, ProductPartSupplier, Request, Specialist, Brand, CarOwner, Cars,  PartSupplier, Product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.hashers import make_password
@@ -60,6 +60,7 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
     # brands = serializers.ListField(write_only=True)
     partBrands = serializers.SerializerMethodField(read_only=True)
     partBrandsName = serializers.SerializerMethodField(read_only=True)
+    carModel = serializers.SerializerMethodField(read_only=True)
     productName = serializers.CharField(
         source='productId.productName', read_only=True)
     category = serializers.CharField(
@@ -70,27 +71,43 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
         source='productId.productImage', read_only=True)
     available = serializers.CharField(
         source='productId.available', read_only=True)
+    productId = serializers.ListField(write_only=True)
 
     class Meta:
         model = ProductPartSupplier
         fields = ['partSupplierId',
-                  'productId', 'productName', 'category', 'description', 'productImage',
+                  'productId', 'productName', 'category', 'carModel', 'description', 'productImage',
                   'available', 'brands', 'count', 'partBrandsName', 'partBrands', 'price']
 
-    # def create(self, validated_data):
-    #     brands_data = validated_data.pop('brands', [])  # Extract brands data
+    def create(self, validated_data):
+        print('1111111')
+        carModel_data = validated_data.pop(
+            'carModel', [])  # Extract brands data
+        product_data = validated_data.pop('productId', [])
+        if isinstance(product_data, str):
+            product_data = [product_data]
+        print("aaaa1234")
+        workshop = PartSupplier.objects.create(**validated_data)
+        print('brands_data', carModel_data)
+        print(type(carModel_data))
+        for brand_string in carModel_data[0].split(','):
+            shopBrands = storeBrandsSerializer(
+                data={'partSupplierId': workshop.pk, 'carModel': brand_string})
+            for productId_string in product_data[0].split(','):
+                product = self.get_serializer(
+                    data={'partSupplierId': workshop.pk, 'productId': productId_string})
+            product.is_valid()
+            if product.errors:
+                print(product.errors)
+            product.is_valid(raise_exception=True)
+            product.save()
+            shopBrands.is_valid()
+            if shopBrands.errors:
+                print(product.errors)
+            shopBrands.is_valid(raise_exception=True)
+            shopBrands.save()
 
-    #     workshop = PartSupplier.objects.create(**validated_data)
-    #     print('brands_data', brands_data)
-    #     print(type(brands_data))
-    #     print("aaaa1234")
-    #     for brand_string in brands_data[0].split(','):
-    #         shopBrands = storeBrandsSerializer(
-    #             data={'partSupplierId': workshop.pk, 'brands': brand_string})
-    #         shopBrands.is_valid(raise_exception=True)
-    #         shopBrands.save()
-
-    #     return workshop
+        return workshop
 
     def get_partBrands(self, obj):
         print(obj)
@@ -100,12 +117,18 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
 
     def get_partBrandsName(self, obj):
         brand_id = obj.brands_id
-        brand_name = Brand.objects.get(id=brand_id).name
+        brand_name = Brand.objects.get(id=brand_id)
         return brand_name
+
+    def get_carModel(self, obj):
+        brand_id = obj.brands_id
+        Brand = CarModel.objects.filter(partSupplierId=obj.pk)
+        return Brand.values_list("brands__name", flat=True)
 
 
 class PartSupplierSerializer (serializers.ModelSerializer):
     brands = serializers.ListField(write_only=True)
+    carModel = serializers.ListField(write_only=True)
     storeBrand = serializers.SerializerMethodField(read_only=True)
     originName = serializers.CharField(
         source='origin.name', read_only=True)
@@ -144,9 +167,6 @@ class WorkShopOwnerSerializer (serializers.ModelSerializer):
     class Meta:
         model = WorkShopOwner
         fields = ['id', 'user_id', 'user']
-
-    def create(self, validated_data):
-        return super().create(validated_data)
 
 
 class workshopBrandsSerializer (serializers.ModelSerializer):
@@ -192,7 +212,7 @@ class WorkShopSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = WorkShop
-        fields = ['workshopOwnerId', 'ownerInfo', 'brands', 'WorkShopBrands', 'originName', 'origin',  'location', 'address',
+        fields = ['id', 'workshopOwnerId', 'ownerInfo', 'brands', 'WorkShopBrands', 'originName', 'origin',  'location', 'address',
                   'workshopName', 'currentCars', 'contactNumber',  'specialist', 'specialistName', 'avatar', 'logo']
 
     def create(self, validated_data):
@@ -266,11 +286,13 @@ class WorkShopImageSerializer (serializers.ModelSerializer):
 class RequestSerializer (serializers.ModelSerializer):
     class Meta:
         model = Request
-        fields = ['workshopId', 'carsId',
-                  'userId', 'category', 'date', 'status']
+        fields = ['id', 'workshopId', 'carsId',
+                  'userId', 'requestType', 'notes', 'date', 'status', 'transactionStatus']
 
 
 class CarsSerializer (serializers.ModelSerializer):
+    carId = serializers.CharField(
+        source='id', read_only=True)
     name = serializers.CharField(
         source='userId.user_id.fullName', read_only=True)
     brandName = serializers.CharField(
@@ -282,7 +304,7 @@ class CarsSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = Cars
-        fields = ['userId', 'name', 'carBrand', 'brandName', 'carModel', 'modelName', 'carOrigin', 'originName',
+        fields = ['carId', 'userId', 'name', 'carBrand', 'brandName', 'carModel', 'modelName', 'carOrigin', 'originName',
                   'carYear', 'carColor', 'plateNumber', 'avatar']
 
 
@@ -363,16 +385,18 @@ class locationSerializer (serializers.ModelSerializer):
 
 
 class maintenanceSerializer (serializers.ModelSerializer):
+    request = RequestSerializer(source='requestId', read_only=True)
+
     class Meta:
         model = maintenance
-        fields = ['requestId', 'starts', 'ends', 'cost']
+        fields = ['requestId', 'request', 'starts',
+                  'ends', 'cost', 'description']
 
 
 class TowCarOwnerSerializer (serializers.ModelSerializer):
     user = UserSerializer(source='user_id', read_only=True)
 
     class Meta:
-        car = serializers.CharField(source='Cars_model')
         model = TowCarOwner
         fields = ['user_id', 'user']
 
@@ -408,4 +432,22 @@ class ImagesSerializer(serializers.ModelSerializer):
 class CitySerializer(serializers.ModelSerializer):
     class Meta:
         model = City
+        fields = ['id', 'name']
+
+
+class TransactionStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TransactionStatus
+        fields = ['id', 'name']
+
+
+class StatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Status
+        fields = ['id', 'name']
+
+
+class RequestTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestType
         fields = ['id', 'name']

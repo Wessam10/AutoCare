@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from enum import Enum
 
 
 # Create your models here.
@@ -204,33 +205,68 @@ class WorkShopImages(models.Model):
         upload_to='autocare/workshop/images', null=True)
 
 
+class TransactionStatus(models.Model):
+    name = models.CharField(max_length=255, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Status(models.Model):
+    name = models.CharField(max_length=255, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class RequestType(models.Model):
+    name = models.CharField(max_length=255, null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Request(models.Model):
     workshopId = models.ForeignKey(WorkShop, on_delete=models.CASCADE)
     carsId = models.ForeignKey(Cars, on_delete=models.CASCADE)
     userId = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     requestType = models.CharField(max_length=255)
-    date = models.DateField()
-    status = models.CharField(max_length=255)
+    date = models.DateTimeField(null=True, blank=True)
     notes = models.CharField(max_length=255, null=True)
+    transactionStatus = models.ForeignKey(
+        TransactionStatus, on_delete=models.CASCADE, default=1)
+    status = models.ForeignKey(
+        Status, on_delete=models.CASCADE, default=2)
+
+    def __str__(self):
+        return self.requestType
 
 
 class maintenance(models.Model):
     requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
-    starts = models.DateTimeField()
-    ends = models.DateTimeField()
-    cost = models.PositiveBigIntegerField
+    starts = models.DateTimeField(null=True)
+    ends = models.DateTimeField(null=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.requestId.requestType
 
 
 class checkup (models.Model):
     requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
-    starts = models.DateTimeField()
-    ends = models.DateTimeField()
+    starts = models.DateTimeField(null=True)
+    ends = models.DateTimeField(null=True)
     cost = models.PositiveBigIntegerField
 
 
 class TowRequest (models.Model):
     requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
+    towCarId = models.ForeignKey(TowCars, on_delete=models.CASCADE)
     cost = models.PositiveBigIntegerField
+    currentLocation = models.CharField(max_length=255)
+    towCarLocation = models.CharField(max_length=255)
+    destination = models.CharField(max_length=255)
 
 
 class workshopBrands (models.Model):
@@ -257,6 +293,7 @@ class storeBrands (models.Model):
     partSupplierId = models.ForeignKey(
         PartSupplier, on_delete=models.CASCADE)
     brands = models.ForeignKey(Brand, on_delete=models.CASCADE)
+    carModel = models.ForeignKey(CarModel, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.brands.name
