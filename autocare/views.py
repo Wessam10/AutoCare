@@ -1,3 +1,6 @@
+import jwt
+from django.contrib.auth.models import User
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import get_object_or_404, render
 from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
@@ -16,6 +19,10 @@ from fcm_django.models import FCMDevice
 from firebase_admin.messaging import Message, Notification
 import math
 from rest_framework.decorators import action
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_201_CREATED
+from django.contrib.auth import authenticate
 from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages, workshopBrands,
@@ -543,6 +550,25 @@ class TowRequestViewSet (ModelViewSet):
         return Response(k.data, status=status.HTTP_200_OK)
 
 
+class tokenDeviceViewSet (ModelViewSet):
+    queryset = TowRequest.objects.all().order_by('pk')
+    serializer_class = TowRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        user = self.request.user.pk
+        field_token = request.data.get('Registration token', None)
+        name = request.data.get('Name', None)
+
+        user_id = user
+
+        print('111111')
+        FCMDevice.objects.create(
+            user_id=user_id, registration_id=field_token, name=name)
+
+        return Response({'message': 'Token received and stored successfully'}, status=HTTP_201_CREATED)
+
+
 class UserViewSet (ModelViewSet):
     queryset = User.objects.all().order_by('pk')
     serializer_class = UserSerializer
@@ -644,7 +670,8 @@ class MaintenanceViewSet (ModelViewSet):
         user = self.request.user.pk
         request_data = request.data
         carOwner = CarOwner.objects.get(user_id=user)
-        devices = FCMDevice.objects.filter(user=user)
+        workshop_id = request.data.get('workshopId')
+        devices = FCMDevice.objects.get(user=workshop_id)
         request.data["userId"] = carOwner.pk
         request.data["transactionStatus"] = 1
         request_info = {}
