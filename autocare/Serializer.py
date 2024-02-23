@@ -109,7 +109,7 @@ class PartSupplierSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = PartSupplier
-        fields = ['user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
+        fields = ['user_id', 'user', 'brands', 'storeBrand', 'carModel', 'originName', 'origin',  'location', 'address',
                   'storeName', 'contactNumber', 'logo', 'storeAvatar']
 
     def create(self, validated_data):

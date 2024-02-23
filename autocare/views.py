@@ -563,10 +563,16 @@ class tokenDeviceViewSet (ModelViewSet):
         user_id = user
 
         print('111111')
-        FCMDevice.objects.create(
-            user_id=user_id, registration_id=field_token, name=name)
-
-        return Response({'message': 'Token received and stored successfully'}, status=HTTP_201_CREATED)
+        try:
+            device_token = FCMDevice.objects.create(
+                user=user,
+                registration_id=field_token,
+                name=name
+            )
+            return Response({'message': 'Token and record saved successfully', 'data': device_token.pk}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            # Handle errors gracefully, providing a user-friendly message
+            return Response({'error': 'An error occurred while saving the token: ' + str(e)}, status=status.HTTP_200_OK)
 
 
 class UserViewSet (ModelViewSet):
@@ -992,50 +998,50 @@ class favoriteViewSet (ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class ProductPartViewSet (ModelViewSet):
-    queryset = ProductPartSupplier.objects.filter()
-    serializer_class = ProductPartSupplierSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['partSupplierId']
+# class ProductPartViewSet (ModelViewSet):
+#     queryset = ProductPartSupplier.objects.filter()
+#     serializer_class = ProductPartSupplierSerializer
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_fields = ['partSupplierId']
 
-    def create(self, request, *args, **kwargs):
-        request.data._mutable = True
-        data = request.data
-        user = self.request.user.pk
-        part_supplier = PartSupplier.objects.get(user_id=user)
-        request.data['partSupplierId'] = part_supplier.pk
-        print("1")
-        print(part_supplier.pk)
+#     def create(self, request, *args, **kwargs):
+#         request.data._mutable = True
+#         data = request.data
+#         user = self.request.user.pk
+#         part_supplier = PartSupplier.objects.get(user_id=user)
+#         request.data['partSupplierId'] = part_supplier.pk
+#         print("1")
+#         print(part_supplier.pk)
 
-        product_info = {}
-        for product_data in data:
-            product_info[product_data] = data.get(product_data, None)
-            print(product_data)
-        origin_brands = []
-        print(product_info, "@@@@@@@@@@@@")
-        brands = product_info.get('brands', None)
-        brands_list = [int(brand)
-                       for brand in brands.split(',') if brand.isdigit()]
-        print(brands_list)
-        origin_brands = storeBrands.objects.filter(
-            partSupplierId=part_supplier.pk, brands__in=brands_list)
+#         product_info = {}
+#         for product_data in data:
+#             product_info[product_data] = data.get(product_data, None)
+#             print(product_data)
+#         origin_brands = []
+#         print(product_info, "@@@@@@@@@@@@")
+#         brands = product_info.get('brands', None)
+#         brands_list = [int(brand)
+#                        for brand in brands.split(',') if brand.isdigit()]
+#         print(brands_list)
+#         origin_brands = storeBrands.objects.filter(
+#             partSupplierId=part_supplier.pk, brands__in=brands_list)
 
-        print(origin_brands.count(), brands_list.__len__())
-        if origin_brands.count() == brands_list.__len__():
-            for i in origin_brands:
-                product_info["brands"] = i.brands.pk
-                print(i.brands.pk)
-                print(product_info)
-                print('112344')
-                product = ProductPartSupplierSerializer(data=product_info)
-                product.is_valid()
-                if product.errors:
-                    print(product.errors)
+#         print(origin_brands.count(), brands_list.__len__())
+#         if origin_brands.count() == brands_list.__len__():
+#             for i in origin_brands:
+#                 product_info["brands"] = i.brands.pk
+#                 print(i.brands.pk)
+#                 print(product_info)
+#                 print('112344')
+#                 product = ProductPartSupplierSerializer(data=product_info)
+#                 product.is_valid()
+#                 if product.errors:
+#                     print(product.errors)
 
-                product.is_valid(raise_exception=True)
-                product.save()
+#                 product.is_valid(raise_exception=True)
+#                 product.save()
 
-        return Response(origin_brands.values(), status=status.HTTP_200_OK)
+#         return Response(origin_brands.values(), status=status.HTTP_200_OK)
 
 
 class ProductsPartViewSet(ModelViewSet):

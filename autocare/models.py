@@ -282,7 +282,7 @@ class workshopBrands (models.Model):
 
 
 class ProductPartSupplier(models.Model):
-    partSupplier_id = models.ForeignKey(
+    partSupplierId = models.ForeignKey(
         PartSupplier, on_delete=models.CASCADE)
     productId = models.ForeignKey(Product, on_delete=models.CASCADE)
     brands = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
@@ -294,7 +294,7 @@ class ProductPartSupplier(models.Model):
 
 
 class storeBrands (models.Model):
-    partSupplier_id = models.ForeignKey(
+    partSupplierId = models.ForeignKey(
         PartSupplier, on_delete=models.CASCADE)
     brands = models.ForeignKey(Brand, on_delete=models.CASCADE)
     carModel = models.ForeignKey(CarModel, on_delete=models.CASCADE)
