@@ -557,7 +557,7 @@ class tokenDeviceViewSet (ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         user = self.request.user.pk
-        field_token = request.data.get('Registration token', None)
+        field_token = request.data.get('mobileToken', None)
         name = request.data.get('Name', None)
 
         user_id = user
