@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from . import views
 from django.urls import path, include
-from .views import MyTokenObtainPairView, ToggleTowCarAvailability,  CarOwnerUpdateAPIView, PartSupplierUpdateAPIView, WorkShopUpdateAPIView, RequestViewSet
+from .views import MyTokenObtainPairView, ToggleTowCarAvailability, TowRequestViewSet, CarOwnerUpdateAPIView, PartSupplierUpdateAPIView, WorkShopUpdateAPIView, RequestViewSet
 
 
 routers = DefaultRouter()
@@ -30,7 +30,7 @@ routers.register('CreateWorkShopOwner', views.WorkShopOwnerViewSet)
 routers.register('ManageWorkShopImages', views.WorkShopImagesViewSet)
 routers.register('ManageOrigin_Brand', views.Origin_BrandViewSet)
 routers.register('GetSpecialists', views.SpecialistViewSet)
-routers.register('AssignProduct', views.ProductPartViewSet)
+routers.register('AssignProduct', views.ProductsPartViewSet)
 routers.register('CarModel', views.CarModelViewSet)
 routers.register('TowBrand', views.TowBrandViewSet)
 routers.register('TowOrigin', views.TowOriginViewSet)
@@ -46,6 +46,8 @@ routers.register('City', views.CityViewSet, basename="city")
 routers.urls
 urlpatterns = [
     path('login', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('get-distance-for-all-cars', TowRequestViewSet.as_view(
+        {'get': 'get_distance_for_all_cars'}), name='get-distance-for-all-cars'),
     path('', include(routers.urls)),
     path('profile', views.userImagesViewSet.as_view()),
     path('add', views.add),

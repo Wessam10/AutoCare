@@ -12,8 +12,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
-
-
+from fcm_django.models import FCMDevice
+from firebase_admin.messaging import Message, Notification
+import math
+from rest_framework.decorators import action
 from . import models
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages, workshopBrands,
@@ -392,10 +394,153 @@ class TowCarOwnerViewSet (ModelViewSet):
         # return super().create(request, *args, **kwargs)
 
 
+def calculate_distance(lat1, lon1, lat2, lon2):
+    # Convert degrees to radians
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+
+    # Calculate differences
+    delta_lat = lat2_rad - lat1_rad
+    delta_lon = lon2_rad - lon1_rad
+
+    # Earth's radius in kilometers
+    radius = 6371
+
+    # Apply Haversine formula
+    a = math.sin(delta_lat / 2) ** 2 + math.cos(lat1_rad) * \
+        math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = radius * c
+
+    return distance
+
+
 class TowRequestViewSet (ModelViewSet):
     queryset = TowRequest.objects.all().order_by('pk')
     serializer_class = TowRequestSerializer
     permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def get_distance_for_all_cars(self, request):
+        tow_cars = TowCars.objects.all().order_by('pk')  # Get all tow cars
+        distances = []
+        coordinates1 = request.data.get('currentLocation', '').strip()
+        latitude1, longitude1 = coordinates1.split(',')
+        for i in tow_cars:
+            coordinates = i.location
+            latitude, longitude = coordinates.split(',')
+
+            R = 6371  # Radius of the Earth in kilometers
+
+            # Convert latitude and longitude from degrees to radians
+            lat1_rad = math.radians(float(latitude))
+            lon1_rad = math.radians(float(longitude))
+            lat2_rad = math.radians(float(latitude1))
+            lon2_rad = math.radians(float(longitude1))
+
+            # Calculate the differences between the latitudes and longitudes
+            delta_lat = lat2_rad - lat1_rad
+            delta_lon = lon2_rad - lon1_rad
+
+            # Apply the Haversine formula
+            a = math.sin(delta_lat/2)**2 + math.cos(lat1_rad) * \
+                math.cos(lat2_rad) * math.sin(delta_lon/2)**2
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+            distance = R * c
+
+            distances.append(
+                {'tow_car_id': i.id, 'distance': distance})
+
+            sorted_distances = sorted(
+                distances, key=lambda x: x['distance'])
+
+        return Response({'TowCars': sorted_distances}, status=200)
+
+    def create(self, request, *args, **kwargs):
+        user = self.request.user.pk
+        print(user)
+        request_data = request.data
+        carOwner = CarOwner.objects.get(user_id=user)
+        car = Cars.objects.get(userId=carOwner.pk)
+        print(car)
+        request.data._mutable = True
+        request.data["userId"] = carOwner.pk
+        request.data["carsId"] = car.pk
+        print('1234')
+        sorted_distances = self.get_distance_for_all_cars(
+            request).data['TowCars']
+        print(sorted_distances[0])
+        request.data["towCarId"] = sorted_distances[0]['tow_car_id']
+
+        request_info = {}
+
+        for data in request_data:
+            print(data)
+            request_info[data] = request_data.get(data, None)
+
+        serializer = RequestSerializer(data=request_info)
+        serializer.is_valid()
+        if serializer.errors:
+            print(serializer.errors)
+        serializer.is_valid(raise_exception=True)
+        r1 = serializer.save()
+
+        request_data["requestId"] = r1.pk
+        request_data
+        print(request_data)
+        k = TowRequestSerializer(data=request_data,)
+        k.is_valid()
+        k.save()
+        print(k.is_valid())
+
+        return Response(request.data, status=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        request_id = kwargs.get('pk')
+        request_data = request.data
+        user = self.request.user.pk
+        request.data._mutable = True
+        carOwner = CarOwner.objects.get(user_id=user)
+        shop = Request.objects.get(id=request_id)
+        mai = TowRequest.objects.get(requestId=shop.pk)
+        lat1_str, lon1_str = mai.currentLocation.split(',')
+        lat2_str, lon2_str = mai.destination.split(',')
+        lat1 = float(lat1_str)
+        lon1 = float(lon1_str)
+        lat2 = float(lat2_str)
+        lon2 = float(lon2_str)
+        distance = calculate_distance(lat1, lon1, lat2, lon2)
+        print('v')
+        c = distance * 10000
+        cost_int = int(c)
+        print(c)
+        print(cost_int)
+        request.data["userId"] = carOwner.pk
+        request.data["carsId"] = shop.carsId.pk
+        print(shop.pk)
+        request.data["currentLocation"] = mai.currentLocation
+        request.data["destination"] = mai.destination
+        request.data["userId"] = carOwner.pk
+        request.data['requestId'] = request_id
+        request.data['requestType'] = shop.requestType
+
+        request.data['cost'] = cost_int
+        serializer = RequestSerializer(
+            instance=shop, data=request_data, partial=True)
+        print(shop)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.update(instance=shop,
+                          validated_data=serializer.validated_data)
+        k = TowRequestSerializer(
+            instance=mai, data=request_data, partial=True)
+        k.is_valid(raise_exception=True)
+        k.update(instance=mai, validated_data=k.validated_data)
+        print('123578910')
+
+        return Response(k.data, status=status.HTTP_200_OK)
 
 
 class UserViewSet (ModelViewSet):
@@ -495,14 +640,22 @@ class MaintenanceViewSet (ModelViewSet):
     # permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
+        request.data._mutable = True
         user = self.request.user.pk
         request_data = request.data
         carOwner = CarOwner.objects.get(user_id=user)
-        request.data._mutable = True
+        devices = FCMDevice.objects.filter(user=user)
         request.data["userId"] = carOwner.pk
         request.data["transactionStatus"] = 1
         request_info = {}
-
+        # devices.send_message(
+        #     message=Message(
+        #         notification=Notification(
+        #             title='Request Maintenance',
+        #             body=f'Success🎉 Transaction status: {request.data["transactionStatus"]}'
+        #         ),
+        #     ),
+        # )
         for data in request_data:
             print(data)
             request_info[data] = request_data.get(data, None)
@@ -516,10 +669,14 @@ class MaintenanceViewSet (ModelViewSet):
 
         request_data["requestId"] = r1.pk
         print(request_data)
+        print("1234")
         k = maintenanceSerializer(data=request_data,)
-        k.is_valid()
-        k.save()
         print(k.is_valid())
+        k.is_valid()
+        if serializer.errors:
+            print(serializer.errors)
+        k.is_valid(raise_exception=True)
+        k.save()
 
         return Response(request.data, status=status.HTTP_200_OK)
 
@@ -740,6 +897,7 @@ class TowCarViewSet(ModelViewSet):
             print(user_data)
             towCar_info[user_data] = request_data.get(user_data, None)
         car = TowCarsSerializer(data=towCar_info)
+        car.is_valid()
         if car.errors:
             print(car.errors)
         car.is_valid(raise_exception=True)
@@ -851,6 +1009,13 @@ class ProductPartViewSet (ModelViewSet):
                 product.save()
 
         return Response(origin_brands.values(), status=status.HTTP_200_OK)
+
+
+class ProductsPartViewSet(ModelViewSet):
+    queryset = ProductPartSupplier.objects.filter()
+    serializer_class = ProductPartSupplierSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['partSupplier_id']
 
 
 class CarModelViewSet(ModelViewSet):

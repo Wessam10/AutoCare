@@ -192,6 +192,7 @@ class TowCars(models.Model):
     carOrigin = models.ForeignKey(TowOrigin, on_delete=models.CASCADE)
     carBrand = models.ForeignKey(TowBrand, on_delete=models.DO_NOTHING)
     carYear = models.CharField(max_length=255)
+    location = models.CharField(max_length=255)
     plateNumber = models.CharField(max_length=255, unique=True)
     available = models.BooleanField(default=False)
 
@@ -227,7 +228,8 @@ class RequestType(models.Model):
 
 
 class Request(models.Model):
-    workshopId = models.ForeignKey(WorkShop, on_delete=models.CASCADE)
+    workshopId = models.ForeignKey(
+        WorkShop, on_delete=models.CASCADE, null=True)
     carsId = models.ForeignKey(Cars, on_delete=models.CASCADE)
     userId = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     requestType = models.CharField(max_length=255)
@@ -239,18 +241,18 @@ class Request(models.Model):
         Status, on_delete=models.CASCADE, default=2)
 
     def __str__(self):
-        return self.requestType
+        return self.userId.fullName
 
 
 class maintenance(models.Model):
     requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
     starts = models.DateTimeField(null=True)
     ends = models.DateTimeField(null=True)
-    cost = models.DecimalField(max_digits=10, decimal_places=2)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     description = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.requestId.requestType
+        return self.requestId.userId.fullName
 
 
 class checkup (models.Model):
@@ -263,10 +265,12 @@ class checkup (models.Model):
 class TowRequest (models.Model):
     requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
     towCarId = models.ForeignKey(TowCars, on_delete=models.CASCADE)
-    cost = models.PositiveBigIntegerField
+    cost = models.DecimalField(max_digits=30, decimal_places=2)
     currentLocation = models.CharField(max_length=255)
-    towCarLocation = models.CharField(max_length=255)
     destination = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.requestId.userId.fullName
 
 
 class workshopBrands (models.Model):
@@ -278,7 +282,7 @@ class workshopBrands (models.Model):
 
 
 class ProductPartSupplier(models.Model):
-    partSupplierId = models.ForeignKey(
+    partSupplier_id = models.ForeignKey(
         PartSupplier, on_delete=models.CASCADE)
     productId = models.ForeignKey(Product, on_delete=models.CASCADE)
     brands = models.ForeignKey(Brand, on_delete=models.DO_NOTHING)
@@ -290,7 +294,7 @@ class ProductPartSupplier(models.Model):
 
 
 class storeBrands (models.Model):
-    partSupplierId = models.ForeignKey(
+    partSupplier_id = models.ForeignKey(
         PartSupplier, on_delete=models.CASCADE)
     brands = models.ForeignKey(Brand, on_delete=models.CASCADE)
     carModel = models.ForeignKey(CarModel, on_delete=models.CASCADE)

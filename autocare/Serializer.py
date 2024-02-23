@@ -75,44 +75,17 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductPartSupplier
-        fields = ['partSupplierId',
+        fields = ['partSupplier_id',
                   'productId', 'productName', 'category', 'carModel', 'description', 'productImage',
                   'available', 'brands', 'count', 'partBrandsName', 'partBrands', 'price']
 
     def create(self, validated_data):
-        print('1111111')
-        carModel_data = validated_data.pop(
-            'carModel', [])  # Extract brands data
-        product_data = validated_data.pop('productId', [])
-        if isinstance(product_data, str):
-            product_data = [product_data]
-        print("aaaa1234")
-        workshop = PartSupplier.objects.create(**validated_data)
-        print('brands_data', carModel_data)
-        print(type(carModel_data))
-        for brand_string in carModel_data[0].split(','):
-            shopBrands = storeBrandsSerializer(
-                data={'partSupplierId': workshop.pk, 'carModel': brand_string})
-            for productId_string in product_data[0].split(','):
-                product = self.get_serializer(
-                    data={'partSupplierId': workshop.pk, 'productId': productId_string})
-            product.is_valid()
-            if product.errors:
-                print(product.errors)
-            product.is_valid(raise_exception=True)
-            product.save()
-            shopBrands.is_valid()
-            if shopBrands.errors:
-                print(product.errors)
-            shopBrands.is_valid(raise_exception=True)
-            shopBrands.save()
-
-        return workshop
+        return super().create(validated_data)
 
     def get_partBrands(self, obj):
         print(obj)
         print(obj.pk)
-        Brand = storeBrands.objects.filter(partSupplierId=obj.pk)
+        Brand = storeBrands.objects.filter(partSupplier_id=obj.pk)
         return Brand.values_list("brands__name", flat=True)
 
     def get_partBrandsName(self, obj):
@@ -311,7 +284,7 @@ class CarsSerializer (serializers.ModelSerializer):
 class TowCarsSerializer (serializers.ModelSerializer):
     class Meta:
         model = TowCars
-        fields = ['userId', 'carBrand', 'carOrigin', 'coverageCity',
+        fields = ['userId', 'carBrand', 'location', 'carOrigin', 'coverageCity',
                   'carYear', 'plateNumber', 'available']
 
 
@@ -367,9 +340,12 @@ class productSerializer (serializers.ModelSerializer):
 
 
 class TowRequestSerializer (serializers.ModelSerializer):
+    request = RequestSerializer(source='requestId', read_only=True)
+
     class Meta:
         model = TowRequest
-        fields = ['TowCarOwnerId']
+        fields = ['towCarId', 'request', 'requestId', 'cost',
+                  'currentLocation', 'destination']
 
 
 class checkupSerializer (serializers.ModelSerializer):
