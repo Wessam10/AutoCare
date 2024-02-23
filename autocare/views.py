@@ -1,3 +1,5 @@
+import http.client
+import json
 import jwt
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -24,6 +26,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_201_CREATED
 from django.contrib.auth import authenticate
 from . import models
+from django.db.models import Q
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages, workshopBrands,
                      WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
@@ -153,7 +156,7 @@ class RequestViewSet (ModelViewSet):
     serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filter_fields = ['carId']
+    filter_fields = ['carId', 'userId']
 
 
 class BrandViewSet (ModelViewSet):
@@ -429,6 +432,14 @@ class TowRequestViewSet (ModelViewSet):
     serializer_class = TowRequestSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            requests = Request.objects.filter(userId=user.pk)
+            return TowRequest.objects.filter(requestId__in=requests).order_by('pk')
+        else:
+            return TowRequest.objects.all().order_by('pk')
+
     @action(detail=False, methods=['get'])
     def get_distance_for_all_cars(self, request):
         tow_cars = TowCars.objects.all().order_by('pk')  # Get all tow cars
@@ -671,24 +682,43 @@ class MaintenanceViewSet (ModelViewSet):
     serializer_class = maintenanceSerializer
     # permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            requests = Request.objects.filter(userId=user.pk)
+            return maintenance.objects.filter(requestId__in=requests).order_by('pk')
+        else:
+            return maintenance.objects.all().order_by('pk')
+
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         user = self.request.user.pk
         request_data = request.data
         carOwner = CarOwner.objects.get(user_id=user)
         workshop_id = request.data.get('workshopId')
-        devices = FCMDevice.objects.get(user=workshop_id)
+        devices = "cm6WjfQPTRe52hHxO1UGTL:APA91bEr5h46xbTeodEBHEFxxqsXY-nEK7pzgjiTYWYEBaZH4phOxqWXER5kZ-tmSNFZnYXV-tM_5t7NJsyclzc7xsnHy9erhZLR8_ynM360miBvDBkPGDitVsZP3X_pVX4zCRO4Xbra"
         request.data["userId"] = carOwner.pk
         request.data["transactionStatus"] = 1
         request_info = {}
-        # devices.send_message(
-        #     message=Message(
-        #         notification=Notification(
-        #             title='Request Maintenance',
-        #             body=f'Success🎉 Transaction status: {request.data["transactionStatus"]}'
-        #         ),
-        #     ),
-        # )
+        conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        payload = json.dumps({
+            "to": "cm6WjfQPTRe52hHxO1UGTL:APA91bEr5h46xbTeodEBHEFxxqsXY-nEK7pzgjiTYWYEBaZH4phOxqWXER5kZ-tmSNFZnYXV-tM_5t7NJsyclzc7xsnHy9erhZLR8_ynM360miBvDBkPGDitVsZP3X_pVX4zCRO4Xbra",
+            "notification": {
+                "title": "Check this Mobile (title)",
+                "body": "Rich Notification testing (body)",
+                "mutable_content": True,
+                "sound": "Tri-tone"
+            },
+
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        }
+        conn.request("POST", "/fcm/send", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+
         for data in request_data:
             print(data)
             request_info[data] = request_data.get(data, None)
@@ -766,6 +796,15 @@ class shopMaintenanceViewSet (ModelViewSet):
         request.data["carsId"] = shop.carsId.pk
         request.data['requestType'] = shop.requestType
         request.data['workshopId'] = shop.workshopId.pk
+        devices = "cm6WjfQPTRe52hHxO1UGTL:APA91bEr5h46xbTeodEBHEFxxqsXY-nEK7pzgjiTYWYEBaZH4phOxqWXER5kZ-tmSNFZnYXV-tM_5t7NJsyclzc7xsnHy9erhZLR8_ynM360miBvDBkPGDitVsZP3X_pVX4zCRO4Xbra"
+        devices.send_message(
+            message=Message(
+                notification=Notification(
+                    title='Request Maintenance',
+                    body=f'Success🎉 Transaction status: {request.data["transactionStatus"]}'
+                ),
+            ),
+        )
 
         serializer = RequestSerializer(
             instance=shop, data=request_data, partial=True)
@@ -777,6 +816,30 @@ class shopMaintenanceViewSet (ModelViewSet):
         k.is_valid(raise_exception=True)
         k.update(instance=shop, validated_data=k.validated_data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def sendNot(request):
+
+    conn = http.client.HTTPSConnection("fcm.googleapis.com")
+    payload = json.dumps({
+        "to": "cm6WjfQPTRe52hHxO1UGTL:APA91bEr5h46xbTeodEBHEFxxqsXY-nEK7pzgjiTYWYEBaZH4phOxqWXER5kZ-tmSNFZnYXV-tM_5t7NJsyclzc7xsnHy9erhZLR8_ynM360miBvDBkPGDitVsZP3X_pVX4zCRO4Xbra",
+        "notification": {
+            "title": "Check this Mobile (title)",
+            "body": "Rich Notification testing (body)",
+            "mutable_content": True,
+            "sound": "Tri-tone"
+        },
+
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+    }
+    conn.request("POST", "/fcm/send", payload, headers)
+    res = conn.getresponse()
+    data = res.read()
+    return Response((data.decode("utf-8")))
 
 
 class shop1MaintenanceViewSet (ModelViewSet):
@@ -1044,11 +1107,79 @@ class favoriteViewSet (ModelViewSet):
 #         return Response(origin_brands.values(), status=status.HTTP_200_OK)
 
 
-class ProductsPartViewSet(ModelViewSet):
+class ProductPartViewSet (ModelViewSet):
     queryset = ProductPartSupplier.objects.filter()
     serializer_class = ProductPartSupplierSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['partSupplier_id']
+    filterset_fields = ['partSupplierId', 'brands']
+    # permission_classes = [IsAuthenticated, PartSupplierAuth]
+
+    # def get_queryset(self):
+    #     queryset = super().get_queryset()
+    #     brand_name = self.request.query_params.get('brands')
+    #     print(brand_name)
+    #     queryset1 = storeBrands.objects.none()  # Initialize as an empty queryset
+    #     if brand_name:
+    #         queryset1 = storeBrands.objects.filter(brands=brand_name)
+    #         print('quer')
+    #         print(queryset1)
+    #         print(queryset1.values_list("partSupplierId", flat=True))
+    #         print('quer')
+    #         if not queryset1.exists():
+    #             print('quer')
+    #             raise NotFound(
+    #                 "PartSupplier not found for the specified brand.")
+    #             print(queryset1)
+    #     if queryset1.exists():
+    #         result = PartSupplier.objects.filter(
+    #             id__in=queryset1.values_list("partSupplierId", flat=True))
+    #     else:
+    #         result = queryset
+    #     print(result.values_list("origin", flat=True))
+    #     return result
+
+    def create(self, request, *args, **kwargs):
+        request.data._mutable = True
+        data = request.data
+        user = self.request.user.pk
+        part_supplier = PartSupplier.objects.get(user_id=user)
+        request.data['partSupplierId'] = part_supplier.pk
+        print("1")
+        print(part_supplier.pk)
+
+        product_info = {}
+        for product_data in data:
+            product_info[product_data] = data.get(product_data, None)
+            print(product_data)
+        origin_brands = []
+        print(product_info, "@@@@@@@@@@@@")
+        brands = product_info.get('brands', None)
+        brands_list = [int(brand)
+                       for brand in brands.split(',') if brand.isdigit()]
+        print(brands_list)
+        origin_brands = storeBrands.objects.filter(
+            partSupplierId=part_supplier.pk, brands__in=brands_list)
+        #     brands_list = brands.split(',')
+        #     for brand in brands_list:
+        #         b = Brand.objects.filter(id=brand).first()
+        #         a = int(brand)
+        #         print(type(a))
+        #         print(brands)
+        #         print(b)
+        #         if b:
+        #             origin_brands = storeBrands.objects.filter(
+        #                 partSupplierId=part_supplier.pk, brands=[16, 17])
+        print(origin_brands.count(), brands_list.__len__())
+        if origin_brands.count() == brands_list.__len__():
+            for i in origin_brands:
+                product_info["brands"] = i.brands.pk
+                print(i.brands.pk)
+                print(product_info)
+                product = ProductPartSupplierSerializer(data=product_info)
+                product.is_valid(raise_exception=True)
+                product.save()
+
+        return Response(origin_brands.values(), status=status.HTTP_200_OK)
 
 
 class CarModelViewSet(ModelViewSet):

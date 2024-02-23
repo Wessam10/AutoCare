@@ -30,7 +30,7 @@ routers.register('CreateWorkShopOwner', views.WorkShopOwnerViewSet)
 routers.register('ManageWorkShopImages', views.WorkShopImagesViewSet)
 routers.register('ManageOrigin_Brand', views.Origin_BrandViewSet)
 routers.register('GetSpecialists', views.SpecialistViewSet)
-routers.register('AssignProduct', views.ProductsPartViewSet)
+routers.register('AssignProduct', views.ProductPartViewSet)
 routers.register('CarModel', views.CarModelViewSet)
 routers.register('TowBrand', views.TowBrandViewSet)
 routers.register('TowOrigin', views.TowOriginViewSet)
@@ -52,6 +52,7 @@ urlpatterns = [
     path('', include(routers.urls)),
     path('profile', views.userImagesViewSet.as_view()),
     path('add', views.add),
+    path('sendNot', views.sendNot),
     path('AddCarModel', views.AddCarModel),
     path('userType', views.userType),
     path('toggleAvailability/<int:pk>/', ToggleTowCarAvailability.as_view()),

@@ -256,13 +256,6 @@ class WorkShopImageSerializer (serializers.ModelSerializer):
         fields = ['portfolio', 'WorkShop', 'WorkShopInfo']
 
 
-class RequestSerializer (serializers.ModelSerializer):
-    class Meta:
-        model = Request
-        fields = ['id', 'workshopId', 'carsId',
-                  'userId', 'requestType', 'notes', 'date', 'status', 'transactionStatus']
-
-
 class CarsSerializer (serializers.ModelSerializer):
     carId = serializers.CharField(
         source='id', read_only=True)
@@ -279,6 +272,21 @@ class CarsSerializer (serializers.ModelSerializer):
         model = Cars
         fields = ['carId', 'userId', 'name', 'carBrand', 'brandName', 'carModel', 'modelName', 'carOrigin', 'originName',
                   'carYear', 'carColor', 'plateNumber', 'avatar']
+
+
+class RequestSerializer (serializers.ModelSerializer):
+    car = CarsSerializer(source='carsId', read_only=True)
+    workshopName = serializers.CharField(
+        source='workshopId.workshopName', read_only=True)
+    statusName = serializers.CharField(
+        source='status.name', read_only=True)
+    transactionStatusName = serializers.CharField(
+        source='transactionStatus.name', read_only=True)
+
+    class Meta:
+        model = Request
+        fields = ['id', 'workshopId', 'workshopName', 'carsId', 'car',
+                  'userId', 'requestType', 'notes', 'date', 'status', 'statusName', 'transactionStatus', 'transactionStatusName']
 
 
 class TowCarsSerializer (serializers.ModelSerializer):
