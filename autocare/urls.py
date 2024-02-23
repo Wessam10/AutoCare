@@ -55,7 +55,7 @@ urlpatterns = [
     path('sendNot', views.sendNot),
     path('AddCarModel', views.AddCarModel),
     path('userType', views.userType),
-    path('toggleAvailability/<int:pk>/', ToggleTowCarAvailability.as_view()),
+    path('toggleAvailability', ToggleTowCarAvailability.as_view()),
     path('car-owner/update/<int:pk>/', CarOwnerUpdateAPIView.as_view(),
          name='car-owner-update'),
     path('workshop/update/<int:pk>/',

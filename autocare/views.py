@@ -156,7 +156,16 @@ class RequestViewSet (ModelViewSet):
     serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filter_fields = ['carId', 'userId']
+    filterset_fields = ['userId', 'requestType']
+
+    def get_queryset(self):
+        user_id = self.request.user.pk
+        owner = CarOwner.objects.get(user_id=user_id)
+        try:
+            car_owner = Request.objects.filter(userId=owner)
+            return car_owner
+        except CarOwner.DoesNotExist:
+            raise NotFound("Car owner not found.")
 
 
 class BrandViewSet (ModelViewSet):
@@ -683,12 +692,15 @@ class MaintenanceViewSet (ModelViewSet):
     # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated:
-            requests = Request.objects.filter(userId=user.pk)
-            return maintenance.objects.filter(requestId__in=requests).order_by('pk')
-        else:
-            return maintenance.objects.all().order_by('pk')
+        user_id = self.request.user.pk
+        owner = CarOwner.objects.get(user_id=user_id)
+        print(owner.pk)
+        try:
+            car_owner = Request.objects.filter(userId=owner.pk)
+            print(car_owner)
+            return car_owner
+        except Request.DoesNotExist:
+            raise NotFound("Car owner not found.")
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
@@ -696,28 +708,28 @@ class MaintenanceViewSet (ModelViewSet):
         request_data = request.data
         carOwner = CarOwner.objects.get(user_id=user)
         workshop_id = request.data.get('workshopId')
-        devices = "cm6WjfQPTRe52hHxO1UGTL:APA91bEr5h46xbTeodEBHEFxxqsXY-nEK7pzgjiTYWYEBaZH4phOxqWXER5kZ-tmSNFZnYXV-tM_5t7NJsyclzc7xsnHy9erhZLR8_ynM360miBvDBkPGDitVsZP3X_pVX4zCRO4Xbra"
+        # devices = FCMDevice.objects.get(user_id=user)
         request.data["userId"] = carOwner.pk
         request.data["transactionStatus"] = 1
         request_info = {}
-        conn = http.client.HTTPSConnection("fcm.googleapis.com")
-        payload = json.dumps({
-            "to": "cm6WjfQPTRe52hHxO1UGTL:APA91bEr5h46xbTeodEBHEFxxqsXY-nEK7pzgjiTYWYEBaZH4phOxqWXER5kZ-tmSNFZnYXV-tM_5t7NJsyclzc7xsnHy9erhZLR8_ynM360miBvDBkPGDitVsZP3X_pVX4zCRO4Xbra",
-            "notification": {
-                "title": "Check this Mobile (title)",
-                "body": "Rich Notification testing (body)",
-                "mutable_content": True,
-                "sound": "Tri-tone"
-            },
+        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        # payload = json.dumps({
+        #     "to": devices,
+        #     "notification": {
+        #         "title": "New Request",
+        #         "body": "You have new Maintenance Request ",
+        #         "mutable_content": True,
+        #         "sound": "Tri-tone"
+        #     },
 
-        })
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-        }
-        conn.request("POST", "/fcm/send", payload, headers)
-        res = conn.getresponse()
-        data = res.read()
+        # })
+        # headers = {
+        #     'Content-Type': 'application/json',
+        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        # }
+        # conn.request("POST", "/fcm/send", payload, headers)
+        # res = conn.getresponse()
+        # data = res.read()
 
         for data in request_data:
             print(data)
@@ -1011,10 +1023,15 @@ class ToggleTowCarAvailability(generics.UpdateAPIView):
     lookup_field = 'pk'
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.available = not instance.available
-        instance.save()
-        serializer = self.get_serializer(instance)
+        user = self.request.user.pk
+        print(user)
+        owner = TowCarOwner.objects.get(user_id=user)
+        print(owner)
+        tow_car = TowCars.objects.get(userId=owner)
+        print(tow_car)
+        tow_car.available = not tow_car.available
+        tow_car.save()
+        serializer = self.get_serializer(tow_car)
         return Response(serializer.data)
 
 

@@ -231,7 +231,7 @@ class Request(models.Model):
     workshopId = models.ForeignKey(
         WorkShop, on_delete=models.CASCADE, null=True)
     carsId = models.ForeignKey(Cars, on_delete=models.CASCADE)
-    userId = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    userId = models.ForeignKey(CarOwner, on_delete=models.CASCADE, null=True)
     requestType = models.CharField(max_length=255)
     date = models.DateTimeField(null=True, blank=True)
     notes = models.CharField(max_length=255, null=True)

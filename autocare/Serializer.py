@@ -369,11 +369,11 @@ class locationSerializer (serializers.ModelSerializer):
 
 
 class maintenanceSerializer (serializers.ModelSerializer):
-    request = RequestSerializer(source='requestId', read_only=True)
+    # infoRequest = RequestSerializer(source='requestId', read_only=True)
 
     class Meta:
         model = maintenance
-        fields = ['requestId', 'request', 'starts',
+        fields = ['requestId', 'starts',
                   'ends', 'cost', 'description']
 
 
