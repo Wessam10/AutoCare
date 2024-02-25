@@ -26,6 +26,8 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_201_CREATED
 from django.contrib.auth import authenticate
 from . import models
+from django.core.exceptions import ValidationError
+import logging
 from django.db.models import Q
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages, workshopBrands,
@@ -46,6 +48,19 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, To
 def responseData(data: dict, status: bool, message: str):
     response = {'data': data, 'status': status, 'message': message}
     return response
+
+
+# def custom_exception_handler(exc, context):
+#     # Customize error response based on exception type
+#     if isinstance(exc, ValidationError):
+#         response = Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)
+#     else:
+#         response = Response("An error occurred",
+#                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     logger = logging.getLogger(__name__)
+#     # Log the error for debugging
+#     logger.error(f"Error: {exc}")
+#     return response
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -160,14 +175,30 @@ class RequestViewSet (ModelViewSet):
 
     def get_queryset(self):
         user_id = self.request.user.pk
-        owner = CarOwner.objects.get(user_id=user_id)
+        owner = WorkShopOwner.objects.get(user_id=user_id)
+        shop = WorkShop.objects.get(workshopOwnerId=owner)
         print(owner)
         try:
-            car_owner = Request.objects.filter(userId=owner)
+            car_owner = Request.objects.filter(workshopId=shop)
             print(car_owner)
             return car_owner
-        except CarOwner.DoesNotExist:
-            raise NotFound("Car owner not found.")
+        except WorkShopOwner.DoesNotExist:
+            raise NotFound("WorkShopOwner not found.")
+
+
+class CurrentCarsViewSet (ModelViewSet):
+    pagination_class = StandardResultsSetPagination
+    queryset = Request.objects.all().order_by('pk')
+    serializer_class = RequestSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['workshopId']
+
+    def get_queryset(self):
+        user_id = self.request.user.pk
+        owner = WorkShopOwner.objects.get(user_id=user_id)
+        shop = WorkShop.objects.filter(workshopOwnerId=owner).first()
+        return Request.objects.filter(workshopId=shop).order_by('pk')
 
 
 class BrandViewSet (ModelViewSet):
