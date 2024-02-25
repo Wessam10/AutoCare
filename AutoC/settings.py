@@ -151,7 +151,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'EXCEPTION_HANDLER': 'autocare.custom_exception_handler.custom_exception_handler',
+    # 'EXCEPTION_HANDLER': 'autocare.custom_exception_handler.custom_exception_handler',
     # 'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend')
 }
 

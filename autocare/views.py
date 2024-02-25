@@ -176,14 +176,21 @@ class RequestViewSet (ModelViewSet):
     def get_queryset(self):
         user_id = self.request.user.pk
         owner = WorkShopOwner.objects.get(user_id=user_id)
-        shop = WorkShop.objects.get(workshopOwnerId=owner)
-        print(owner)
-        try:
-            car_owner = Request.objects.filter(workshopId=shop)
-            print(car_owner)
-            return car_owner
-        except WorkShopOwner.DoesNotExist:
-            raise NotFound("WorkShopOwner not found.")
+        shop = WorkShop.objects.filter(workshopOwnerId=owner).first()
+        return Request.objects.filter(workshopId=shop).order_by('pk')
+
+
+class CarOwnerRequestViewSet (ModelViewSet):
+    queryset = Request.objects.all().order_by('pk')
+    serializer_class = RequestSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['userId', 'requestType', 'status', 'transactionStatus']
+
+    def get_queryset(self):
+        user_id = self.request.user.pk
+        owner = CarOwner.objects.get(user_id=user_id)
+        return Request.objects.filter(userId=owner.pk).order_by('pk')
 
 
 class CurrentCarsViewSet (ModelViewSet):
