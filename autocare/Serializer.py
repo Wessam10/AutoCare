@@ -274,6 +274,19 @@ class CarsSerializer (serializers.ModelSerializer):
                   'carYear', 'carColor', 'plateNumber', 'avatar']
 
 
+class maintenanceSerializer (serializers.ModelSerializer):
+    # infoRequest = RequestSerializer(source='requestId', read_only=True)
+    # Explicitly define the field type if needed
+    starts = serializers.DateTimeField()
+    ends = serializers.DateTimeField()
+    description = serializers.CharField()
+
+    class Meta:
+        model = maintenance
+        fields = ['requestId', 'starts',
+                  'ends', 'cost', 'description']
+
+
 class RequestSerializer (serializers.ModelSerializer):
     car = CarsSerializer(source='carsId', read_only=True)
     workshopName = serializers.CharField(
@@ -282,11 +295,39 @@ class RequestSerializer (serializers.ModelSerializer):
         source='status.name', read_only=True)
     transactionStatusName = serializers.CharField(
         source='transactionStatus.name', read_only=True)
+    startTime = serializers.SerializerMethodField(read_only=True)
+    endTime = serializers.SerializerMethodField(read_only=True)
+    cost = serializers.SerializerMethodField(read_only=True)
+    description = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Request
         fields = ['id', 'workshopId', 'workshopName', 'carsId', 'car',
-                  'userId', 'requestType', 'notes', 'date', 'status', 'statusName', 'transactionStatus', 'transactionStatusName']
+                  'userId', 'requestType', 'startTime', 'endTime', 'cost', 'description', 'notes', 'date', 'status', 'statusName', 'transactionStatus', 'transactionStatusName']
+
+    def get_startTime(self, obj):
+        print(obj)
+        print(obj.pk)
+        Brand = maintenance.objects.filter(requestId=obj.pk)
+        return Brand.values_list("starts", flat=True)
+
+    def get_cost(self, obj):
+        print(obj)
+        print(obj.pk)
+        Brand = maintenance.objects.filter(requestId=obj.pk)
+        return Brand.values_list("cost", flat=True)
+
+    def get_endTime(self, obj):
+        print(obj)
+        print(obj.pk)
+        Brand = maintenance.objects.filter(requestId=obj.pk)
+        return Brand.values_list("ends", flat=True)
+
+    def get_description(self, obj):
+        print(obj)
+        print(obj.pk)
+        Brand = maintenance.objects.filter(requestId=obj.pk)
+        return Brand.values_list("description", flat=True)
 
 
 class TowCarsSerializer (serializers.ModelSerializer):
@@ -366,15 +407,6 @@ class locationSerializer (serializers.ModelSerializer):
     class Meta:
         model = location
         fields = ['longlat']
-
-
-class maintenanceSerializer (serializers.ModelSerializer):
-    # infoRequest = RequestSerializer(source='requestId', read_only=True)
-
-    class Meta:
-        model = maintenance
-        fields = ['requestId', 'starts',
-                  'ends', 'cost', 'description']
 
 
 class TowCarOwnerSerializer (serializers.ModelSerializer):

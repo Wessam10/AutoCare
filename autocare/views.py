@@ -156,13 +156,15 @@ class RequestViewSet (ModelViewSet):
     serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['userId', 'requestType']
+    filterset_fields = ['userId', 'requestType', 'status', 'transactionStatus']
 
     def get_queryset(self):
         user_id = self.request.user.pk
         owner = CarOwner.objects.get(user_id=user_id)
+        print(owner)
         try:
             car_owner = Request.objects.filter(userId=owner)
+            print(car_owner)
             return car_owner
         except CarOwner.DoesNotExist:
             raise NotFound("Car owner not found.")
@@ -491,6 +493,20 @@ class TowRequestViewSet (ModelViewSet):
         request_data = request.data
         carOwner = CarOwner.objects.get(user_id=user)
         car = Cars.objects.get(userId=carOwner.pk)
+        towOwner = sorted_distances[0]['tow_car_id']
+        # devices = FCMDevice.objects.get(user_id=towOwner)
+        # status = request.data.get('status')
+        # if status == 'DONE':
+        #     self._send_notification(
+        #         devices, "Maintenance Request Completed", "The maintenance request has been completed.")
+        # elif status == 'CANCELLED':
+        #     self._send_notification(
+        #         devices, "Maintenance Request Cancelled", "The maintenance request has been cancelled.")
+        #     self._send_notification(
+        #         devices, "Additional Information", "Please contact the customer for further details.")
+        # else:
+        #     # Handle other statuses if needed
+        #     pass
         print(car)
         request.data._mutable = True
         request.data["userId"] = carOwner.pk
@@ -529,9 +545,21 @@ class TowRequestViewSet (ModelViewSet):
         request_data = request.data
         user = self.request.user.pk
         request.data._mutable = True
-        carOwner = CarOwner.objects.get(user_id=user)
         shop = Request.objects.get(id=request_id)
         mai = TowRequest.objects.get(requestId=shop.pk)
+        # devices = FCMDevice.objects.get(user_id=shop.userId.pk)
+        # status = request.data.get('status')
+        # if status == 'done':
+        #     self._send_notification(
+        #         devices, "Maintenance Request Completed", "The maintenance request has been completed.")
+        # elif status == 'cancelled':
+        #     self._send_notification(
+        #         devices, "Maintenance Request Cancelled", "The maintenance request has been cancelled.")
+        #     self._send_notification(
+        #         devices, "Additional Information", "Please contact the customer for further details.")
+        # else:
+        #     # Handle other statuses if needed
+        #     pass
         lat1_str, lon1_str = mai.currentLocation.split(',')
         lat2_str, lon2_str = mai.destination.split(',')
         lat1 = float(lat1_str)
@@ -544,12 +572,11 @@ class TowRequestViewSet (ModelViewSet):
         cost_int = int(c)
         print(c)
         print(cost_int)
-        request.data["userId"] = carOwner.pk
+        request.data["userId"] = shop.userId.pk
         request.data["carsId"] = shop.carsId.pk
         print(shop.pk)
         request.data["currentLocation"] = mai.currentLocation
         request.data["destination"] = mai.destination
-        request.data["userId"] = carOwner.pk
         request.data['requestId'] = request_id
         request.data['requestType'] = shop.requestType
 
@@ -686,21 +713,42 @@ class locViewSet (ModelViewSet):
     serializer_class = locationSerializer
 
 
+def _send_notification(self, device, title, body):
+    conn = http.client.HTTPSConnection("fcm.googleapis.com")
+    payload = json.dumps({
+        "to": device.registration_id,
+        "notification": {
+            "title": title,
+            "body": body,
+            "mutable_content": True,
+            "sound": "Tri-tone"
+        }
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+    }
+    conn.request("POST", "/fcm/send", payload, headers)
+    res = conn.getresponse()
+    data = res.read()
+
+
 class MaintenanceViewSet (ModelViewSet):
     queryset = maintenance.objects.all().order_by('pk')
     serializer_class = maintenanceSerializer
     # permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        user_id = self.request.user.pk
-        owner = CarOwner.objects.get(user_id=user_id)
-        print(owner.pk)
-        try:
-            car_owner = Request.objects.filter(userId=owner.pk)
-            print(car_owner)
-            return car_owner
-        except Request.DoesNotExist:
-            raise NotFound("Car owner not found.")
+    # def get_queryset(self):
+    #     user_id = self.request.user.pk
+    #     owner = CarOwner.objects.get(user_id=user_id)
+    #     try:
+    #         req = Request.objects.filter(userId=owner)
+    #         print(req)
+    #         main = maintenance.objects.filter(requestId=req)
+    #         print(req)
+    #         return main
+    #     except CarOwner.DoesNotExist:
+    #         raise NotFound("no request")
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
@@ -708,16 +756,18 @@ class MaintenanceViewSet (ModelViewSet):
         request_data = request.data
         carOwner = CarOwner.objects.get(user_id=user)
         workshop_id = request.data.get('workshopId')
-        # devices = FCMDevice.objects.get(user_id=user)
         request.data["userId"] = carOwner.pk
         request.data["transactionStatus"] = 1
         request_info = {}
+        # devices = FCMDevice.objects.get(user_id=workshop_id)
+        # print(devices.registration_id)
+        # print('ppppppppppppppppppppppppppppppppppppppppp')
         # conn = http.client.HTTPSConnection("fcm.googleapis.com")
         # payload = json.dumps({
-        #     "to": devices,
+        #     "to": "cP7pxAjASjuCuH3HKumxbC:APA91bHNHBwWrDXf1whbLaOyvkLZuyuCRFF_JmZOWW4MDaeb7zobabASMK7KIHOYovpxqlbUlXcnw_0CyuGHFwHn79Aojrh_hLe71WgB5bjNW6wr1fvH776X86hXu8XMcln1SqyERRVQ",
         #     "notification": {
         #         "title": "New Request",
-        #         "body": "You have new Maintenance Request ",
+        #         "body": "You have new Maintenance Request",
         #         "mutable_content": True,
         #         "sound": "Tri-tone"
         #     },
@@ -760,12 +810,33 @@ class MaintenanceViewSet (ModelViewSet):
         request_data = request.data
         user = self.request.user.pk
         request.data._mutable = True
-        carOwner = CarOwner.objects.get(user_id=user)
+        Owner = CarOwner.objects.get(user_id=user)
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
         request.data["transactionStatus"] = 2
+        # devices = FCMDevice.objects.get(user_id=shop.workshopId.pk)
+        # print('oooooooooooooooooooooooooooooooooooooooooo')
+        # print(devices.registration_id)
+        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        # payload = json.dumps({
+        #     "to": devices.registration_id,
+        #     "notification": {
+        #         "title": "New Request",
+        #         "body": "Set Time For Request  ",
+        #         "mutable_content": True,
+        #         "sound": "Tri-tone"
+        #     },
+
+        # })
+        # headers = {
+        #     'Content-Type': 'application/json',
+        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        # }
+        # conn.request("POST", "/fcm/send", payload, headers)
+        # res = conn.getresponse()
+        # data = res.read()
         print(shop.pk)
-        request.data["userId"] = carOwner.pk
+        request.data["userId"] = shop.userId.pk
         request.data['requestId'] = request_id
         print('1234')
         request.data["carsId"] = shop.carsId.pk
@@ -801,23 +872,33 @@ class shopMaintenanceViewSet (ModelViewSet):
         request.data._mutable = True
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
-        carOwner = shop.userId
+        Owner = WorkShopOwner.objects.get(user_id=user)
+        k = shop.userId.pk
+        # devices = FCMDevice.objects.get(user_id=k)
+        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        # payload = json.dumps({
+        #     "to": devices.registration_id,
+        #     "notification": {
+        #         "title": "New Request",
+        #         "body": "You have Date for Request Accept or Reject  ",
+        #         "mutable_content": True,
+        #         "sound": "Tri-tone"
+        #     },
+
+        # })
+        # headers = {
+        #     'Content-Type': 'application/json',
+        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        # }
+        # conn.request("POST", "/fcm/send", payload, headers)
+        # res = conn.getresponse()
+        # data = res.read()
         request.data["transactionStatus"] = 3
-        request.data["userId"] = carOwner.pk
+        request.data["userId"] = shop.userId.pk
         request.data['requestId'] = request_id
         request.data["carsId"] = shop.carsId.pk
         request.data['requestType'] = shop.requestType
-        request.data['workshopId'] = shop.workshopId.pk
-        devices = "cm6WjfQPTRe52hHxO1UGTL:APA91bEr5h46xbTeodEBHEFxxqsXY-nEK7pzgjiTYWYEBaZH4phOxqWXER5kZ-tmSNFZnYXV-tM_5t7NJsyclzc7xsnHy9erhZLR8_ynM360miBvDBkPGDitVsZP3X_pVX4zCRO4Xbra"
-        devices.send_message(
-            message=Message(
-                notification=Notification(
-                    title='Request Maintenance',
-                    body=f'Success🎉 Transaction status: {request.data["transactionStatus"]}'
-                ),
-            ),
-        )
-
+        request.data['workshopId'] = Owner.pk
         serializer = RequestSerializer(
             instance=shop, data=request_data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -830,28 +911,28 @@ class shopMaintenanceViewSet (ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
-def sendNot(request):
+# @api_view(['POST'])
+# def sendNot(request):
 
-    conn = http.client.HTTPSConnection("fcm.googleapis.com")
-    payload = json.dumps({
-        "to": "cm6WjfQPTRe52hHxO1UGTL:APA91bEr5h46xbTeodEBHEFxxqsXY-nEK7pzgjiTYWYEBaZH4phOxqWXER5kZ-tmSNFZnYXV-tM_5t7NJsyclzc7xsnHy9erhZLR8_ynM360miBvDBkPGDitVsZP3X_pVX4zCRO4Xbra",
-        "notification": {
-            "title": "Check this Mobile (title)",
-            "body": "Rich Notification testing (body)",
-            "mutable_content": True,
-            "sound": "Tri-tone"
-        },
+#     conn = http.client.HTTPSConnection("fcm.googleapis.com")
+#     payload = json.dumps({
+#         "to": "cm6WjfQPTRe52hHxO1UGTL:APA91bEr5h46xbTeodEBHEFxxqsXY-nEK7pzgjiTYWYEBaZH4phOxqWXER5kZ-tmSNFZnYXV-tM_5t7NJsyclzc7xsnHy9erhZLR8_ynM360miBvDBkPGDitVsZP3X_pVX4zCRO4Xbra",
+#         "notification": {
+#             "title": "Check this Mobile (title)",
+#             "body": "Rich Notification testing (body)",
+#             "mutable_content": True,
+#             "sound": "Tri-tone"
+#         },
 
-    })
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-    }
-    conn.request("POST", "/fcm/send", payload, headers)
-    res = conn.getresponse()
-    data = res.read()
-    return Response((data.decode("utf-8")))
+#     })
+#     headers = {
+#         'Content-Type': 'application/json',
+#         'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+#     }
+#     conn.request("POST", "/fcm/send", payload, headers)
+#     res = conn.getresponse()
+#     data = res.read()
+#     return Response((data.decode("utf-8")))
 
 
 class shop1MaintenanceViewSet (ModelViewSet):
@@ -866,14 +947,33 @@ class shop1MaintenanceViewSet (ModelViewSet):
         request.data._mutable = True
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
+        Owner = WorkShopOwner.objects.get(user_id=user)
         carOwner = shop.userId
+        # devices = FCMDevice.objects.get(user_id=carOwner.pk)
+        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        # payload = json.dumps({
+        #     "to": devices.registration_id,
+        #     "notification": {
+        #         "title": "New Request",
+        #         "body": " Offer Price ",
+        #         "mutable_content": True,
+        #         "sound": "Tri-tone"
+        #     },
+
+        # })
+        # headers = {
+        #     'Content-Type': 'application/json',
+        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        # }
+        # conn.request("POST", "/fcm/send", payload, headers)
+        # res = conn.getresponse()
+        # data = res.read()
         request.data["transactionStatus"] = 4
         request.data["userId"] = carOwner.pk
         request.data['requestId'] = request_id
         request.data["carsId"] = shop.carsId.pk
         request.data['requestType'] = shop.requestType
-        request.data['workshopId'] = shop.workshopId.pk
-
+        request.data['workshopId'] = Owner.pk
         serializer = RequestSerializer(
             instance=shop, data=request_data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -896,11 +996,30 @@ class AcceptMaintenanceViewSet (ModelViewSet):
         user = self.request.user.pk
         request.data._mutable = True
         shop = Request.objects.get(id=request_id)
-        carOwner = shop.userId
         mai = maintenance.objects.get(requestId=request_id)
+        Owner = CarOwner.objects.get(user_id=user)
+        # devices = FCMDevice.objects.get(user_id=shop.workshopId.pk)
+        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        # payload = json.dumps({
+        #     "to": devices.registration_id,
+        #     "notification": {
+        #         "title": "New Request",
+        #         "body": "Your Offer has been approved",
+        #         "mutable_content": True,
+        #         "sound": "Tri-tone"
+        #     },
+
+        # })
+        # headers = {
+        #     'Content-Type': 'application/json',
+        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        # }
+        # conn.request("POST", "/fcm/send", payload, headers)
+        # res = conn.getresponse()
+        # data = res.read()
         request.data["transactionStatus"] = 5
         print(shop.pk)
-        request.data["userId"] = carOwner.pk
+        request.data["userId"] = Owner.pk
         request.data['requestId'] = request_id
         print('1234')
         request.data["carsId"] = shop.carsId.pk
@@ -936,9 +1055,40 @@ class shop2MaintenanceViewSet (ModelViewSet):
         request.data._mutable = True
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
-        carOwner = shop.userId
+        # Owner = WorkShopOwner.objects.get(user_id=user)
+        # devices = FCMDevice.objects.get(user_id=shop.userId.pk)
+        # status = request.data.get('status')
+        # if status == 'DONE':
+        #     self._send_notification(
+        #         devices, "Maintenance Request Completed", "The maintenance request has been completed.")
+        # elif status == 'CANCELLED':
+        #     self._send_notification(
+        #         devices, "Maintenance Request Cancelled", "The maintenance request has been cancelled.")
+        #     self._send_notification(
+        #         devices, "Additional Information", "Please contact the customer for further details.")
+        # else:
+        # Handle other statuses if needed
+        # pass
+        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        # payload = json.dumps({
+        #     "to": devices.registration_id,
+        #     "notification": {
+        #         "title": "New Request",
+        #         "body": "You have new Maintenance Request ",
+        #         "mutable_content": True,
+        #         "sound": "Tri-tone"
+        #     },
+
+        # })
+        # headers = {
+        #     'Content-Type': 'application/json',
+        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        # }
+        # conn.request("POST", "/fcm/send", payload, headers)
+        # res = conn.getresponse()
+        # data = res.read()
         request.data["transactionStatus"] = 6
-        request.data["userId"] = carOwner.pk
+        request.data["userId"] = shop.userId.pk
         request.data['requestId'] = request_id
         request.data["carsId"] = shop.carsId.pk
         request.data['requestType'] = shop.requestType
@@ -1155,48 +1305,90 @@ class ProductPartViewSet (ModelViewSet):
     #     print(result.values_list("origin", flat=True))
     #     return result
 
+    # def create(self, request, *args, **kwargs):
+    #     request.data._mutable = True
+    #     data = request.data
+    #     user = self.request.user.pk
+    #     part_supplier = PartSupplier.objects.get(user_id=user)
+    #     request.data['partSupplierId'] = part_supplier.pk
+    #     print("1")
+    #     print(part_supplier.pk)
+
+    #     product_info = {}
+    #     for product_data in data:
+    #         product_info[product_data] = data.get(product_data, None)
+    #         print(product_data)
+    #     origin_brands = []
+    #     print(product_info, "@@@@@@@@@@@@")
+    #     brands = product_info.get('brands', None)
+    #     brands_list = [int(brand)
+    #                    for brand in brands.split(',') if brand.isdigit()]
+    #     print(brands_list)
+    #     origin_brands = storeBrands.objects.filter(
+    #         partSupplierId=part_supplier.pk, brands__in=brands_list)
+    #     #     brands_list = brands.split(',')
+    #     #     for brand in brands_list:
+    #     #         b = Brand.objects.filter(id=brand).first()
+    #     #         a = int(brand)
+    #     #         print(type(a))
+    #     #         print(brands)
+    #     #         print(b)
+    #     #         if b:
+    #     #             origin_brands = storeBrands.objects.filter(
+    #     #                 partSupplierId=part_supplier.pk, brands=[16, 17])
+    #     print(origin_brands.count(), brands_list.__len__())
+    #     if origin_brands.count() == brands_list.__len__():
+    #         for i in origin_brands:
+    #             product_info["brands"] = i.brands.pk
+    #             print(i.brands.pk)
+    #             print(product_info)
+    #             product = ProductPartSupplierSerializer(data=product_info)
+    #             product.is_valid(raise_exception=True)
+    #             product.save()
+
+    #     return Response(origin_brands.values(), status=status.HTTP_200_OK)
+
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         data = request.data
-        user = self.request.user.pk
-        part_supplier = PartSupplier.objects.get(user_id=user)
-        request.data['partSupplierId'] = part_supplier.pk
-        print("1")
-        print(part_supplier.pk)
 
-        product_info = {}
-        for product_data in data:
-            product_info[product_data] = data.get(product_data, None)
-            print(product_data)
-        origin_brands = []
-        print(product_info, "@@@@@@@@@@@@")
-        brands = product_info.get('brands', None)
-        brands_list = [int(brand)
-                       for brand in brands.split(',') if brand.isdigit()]
-        print(brands_list)
-        origin_brands = storeBrands.objects.filter(
-            partSupplierId=part_supplier.pk, brands__in=brands_list)
-        #     brands_list = brands.split(',')
-        #     for brand in brands_list:
-        #         b = Brand.objects.filter(id=brand).first()
-        #         a = int(brand)
-        #         print(type(a))
-        #         print(brands)
-        #         print(b)
-        #         if b:
-        #             origin_brands = storeBrands.objects.filter(
-        #                 partSupplierId=part_supplier.pk, brands=[16, 17])
-        print(origin_brands.count(), brands_list.__len__())
-        if origin_brands.count() == brands_list.__len__():
-            for i in origin_brands:
-                product_info["brands"] = i.brands.pk
-                print(i.brands.pk)
-                print(product_info)
-                product = ProductPartSupplierSerializer(data=product_info)
-                product.is_valid(raise_exception=True)
-                product.save()
+        # Get user and part supplier
+        user = self.request.user
+        part_supplier = PartSupplier.objects.get(user_id=user.pk)
 
-        return Response(origin_brands.values(), status=status.HTTP_200_OK)
+        # Validate data
+        try:
+            # Convert product IDs, car model IDs, and count to integers
+            product_ids = [int(id) for id in data['productId'].split(',')]
+            car_model_ids = [int(id) for id in data['carModel'].split(',')]
+            count = int(data['count'])
+
+            # Validate existence of products, car models, and brands
+            Product.objects.get_many(pk=product_ids)
+            CarModel.objects.get_many(pk=car_model_ids)
+            brand = Brand.objects.get(pk=data['brands'])
+
+        except (ValueError, Product.DoesNotExist, CarModel.DoesNotExist, Brand.DoesNotExist) as e:
+            raise serializers.ValidationError({"error": str(e)})
+
+        # Iterate through product IDs and create ProductPartSupplier instances
+        for product_id in product_ids:
+            product_part_supplier_data = {
+                'partSupplierId': part_supplier.pk,
+                'productId': product_id,
+                'count': count,
+                'price': data['price'],  # Assuming price is always provided
+                'brands': brand,  # Assuming all products have the same brand
+            }
+            product_part_supplier_serializer = self.get_serializer(
+                data=product_part_supplier_data)
+            product_part_supplier_serializer.is_valid(raise_exception=True)
+            product_part_supplier = product_part_supplier_serializer.save()
+
+            # Assign product to car models
+            product_part_supplier.car_models.set(car_model_ids)
+
+            return Response(status=status.HTTP_201_CREATED)
 
 
 class CarModelViewSet(ModelViewSet):

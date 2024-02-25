@@ -13,7 +13,7 @@ routers.register('shopMaintenance', views.shopMaintenanceViewSet)
 routers.register('evaluateMaintenance', views.shop1MaintenanceViewSet)
 routers.register('AcceptPriceDealMaintenance',
                  views.AcceptMaintenanceViewSet)
-routers.register('FinishedMaintenance', views.shop1MaintenanceViewSet)
+routers.register('FinishedMaintenance', views.shop2MaintenanceViewSet)
 routers.register('AddOrigin', views.OriginViewSet)
 routers.register('AddRequest', views.RequestViewSet)
 routers.register('AddProduct', views.productViewSet)
@@ -52,7 +52,7 @@ urlpatterns = [
     path('', include(routers.urls)),
     path('profile', views.userImagesViewSet.as_view()),
     path('add', views.add),
-    path('sendNot', views.sendNot),
+    #     path('sendNot', views.sendNot),
     path('AddCarModel', views.AddCarModel),
     path('userType', views.userType),
     path('toggleAvailability', ToggleTowCarAvailability.as_view()),

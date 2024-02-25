@@ -241,7 +241,7 @@ class Request(models.Model):
         Status, on_delete=models.CASCADE, default=2)
 
     def __str__(self):
-        return self.userId.fullName
+        return self.requestType
 
 
 class maintenance(models.Model):
@@ -252,7 +252,7 @@ class maintenance(models.Model):
     description = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.requestId.userId.fullName
+        return self.requestId.requestType
 
 
 class checkup (models.Model):
