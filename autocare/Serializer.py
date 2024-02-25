@@ -277,9 +277,9 @@ class CarsSerializer (serializers.ModelSerializer):
 class maintenanceSerializer (serializers.ModelSerializer):
     # infoRequest = RequestSerializer(source='requestId', read_only=True)
     # Explicitly define the field type if needed
-    starts = serializers.DateTimeField()
-    ends = serializers.DateTimeField()
-    description = serializers.CharField()
+    starts = serializers.DateTimeField(required=False)
+    ends = serializers.DateTimeField(required=False)
+    description = serializers.CharField(required=False)
 
     class Meta:
         model = maintenance

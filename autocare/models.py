@@ -246,8 +246,8 @@ class Request(models.Model):
 
 class maintenance(models.Model):
     requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
-    starts = models.DateTimeField(null=True)
-    ends = models.DateTimeField(null=True)
+    starts = models.DateTimeField(null=True, blank=True)
+    ends = models.DateTimeField(null=True, blank=True)
     cost = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     description = models.CharField(max_length=255)
 
