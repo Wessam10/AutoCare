@@ -299,30 +299,28 @@ class RequestSerializer (serializers.ModelSerializer):
                   'userId', 'requestType', 'startTime', 'endTime', 'cost', 'description', 'notes', 'date', 'status', 'statusName', 'transactionStatus', 'transactionStatusName']
 
     def get_startTime(self, obj):
-        print(obj)
-        print(obj.pk)
         Brand = maintenance.objects.filter(requestId=obj.pk)
-        return Brand
+        starts_list = Brand.values_list("starts", flat=True)
+        starts_str = ", ".join(str(start) for start in starts_list)
+        return starts_str
 
     def get_cost(self, obj):
-        print(obj)
-        print(obj.pk)
         Brand = maintenance.objects.filter(requestId=obj.pk)
-        return Brand
+        cost_list = Brand.values_list("cost", flat=True)
+        cost_str = ", ".join(str(c) for c in cost_list)
+        return cost_str
 
     def get_endTime(self, obj):
-        try:
-            # Attempt to retrieve the related maintenance object and its end_time
-            maintenance = maintenance.objects.get(requestId=obj.pk)
-            return str(maintenance.end_time) if maintenance.end_time else None
-        except maintenance.DoesNotExist:
-            return None
+        Brand = maintenance.objects.filter(requestId=obj.pk)
+        ends_list = Brand.values_list("ends", flat=True)
+        ends_str = ", ".join(str(end) for end in ends_list)
+        return ends_str
 
     def get_description(self, obj):
-        print(obj)
-        print(obj.pk)
         Brand = maintenance.objects.filter(requestId=obj.pk)
-        return Brand.values_list("description", flat=True)
+        desc_list = Brand.values_list("description", flat=True)
+        desc_str = ", ".join(str(desc) for desc in desc_list)
+        return desc_str
 
 
 class TowCarsSerializer (serializers.ModelSerializer):
@@ -339,7 +337,7 @@ class productSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['productName', 'category', 'categoryName',
+        fields = ['id', 'productName', 'category', 'categoryName',
                   'description', 'productCode', 'productImage']
 
     def create(self, validated_data):

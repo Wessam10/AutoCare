@@ -205,7 +205,9 @@ class CurrentCarsViewSet (ModelViewSet):
         user_id = self.request.user.pk
         owner = WorkShopOwner.objects.get(user_id=user_id)
         shop = WorkShop.objects.filter(workshopOwnerId=owner).first()
-        return Request.objects.filter(workshopId=shop).order_by('pk')
+        k = Request.objects.filter(workshopId=shop).order_by('pk')
+        if k.transactionStatus == "transactionStatus":
+            return k
 
 
 class BrandViewSet (ModelViewSet):
@@ -864,7 +866,9 @@ class MaintenanceViewSet (ModelViewSet):
         Owner = CarOwner.objects.get(user_id=user)
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
-        if shop.status == 'CANCELLED':  # Assuming you have a 'status' field
+        s = int(request.data.get('status', ''))
+        print(s)
+        if s == 3:
             request.data["transactionStatus"] = 6
         else:
             request.data["transactionStatus"] = 2
@@ -947,7 +951,10 @@ class shopMaintenanceViewSet (ModelViewSet):
         # conn.request("POST", "/fcm/send", payload, headers)
         # res = conn.getresponse()
         # data = res.read()
-        if shop.status == 'CANCELLED':  # Assuming you have a 'status' field
+        # Assuming you have a 'status' field
+        s = int(request.data.get('status', ''))
+        print(s)
+        if s == 3:
             request.data["transactionStatus"] = 6
         else:
             request.data["transactionStatus"] = 3
@@ -1025,7 +1032,12 @@ class shop1MaintenanceViewSet (ModelViewSet):
         # conn.request("POST", "/fcm/send", payload, headers)
         # res = conn.getresponse()
         # data = res.read()
-        request.data["transactionStatus"] = 4
+        s = int(request.data.get('status', ''))
+        print(s)
+        if s == 3:
+            request.data["transactionStatus"] = 6
+        else:
+            request.data["transactionStatus"] = 4
         request.data["userId"] = carOwner.pk
         request.data['requestId'] = request_id
         request.data["carsId"] = shop.carsId.pk
