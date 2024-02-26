@@ -31,7 +31,7 @@ import logging
 from django.db.models import Q
 from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages, workshopBrands,
-                     WorkShopOwner, checkup, location, maintenance, origin, City, ProductPartSupplier,
+                     WorkShopOwner, checkup, location, maintenance, Origin, City, ProductPartSupplier,
                      Product, TowCars, CarModel, TowBrand, TowOrigin, storeBrands, Images, Store, Status, TransactionStatus, RequestType)
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, TowBrandSerializer, TowOriginSerializer,
@@ -731,7 +731,7 @@ class WorkShopOwnerViewSet (ModelViewSet):
 
 
 class OriginViewSet (ModelViewSet):
-    queryset = origin.objects.all().order_by('pk')
+    queryset = Origin.objects.all().order_by('pk')
     serializer_class = OriginSerializer
 
 
@@ -776,17 +776,15 @@ class MaintenanceViewSet (ModelViewSet):
     serializer_class = maintenanceSerializer
     # permission_classes = [IsAuthenticated]
 
-    # def get_queryset(self):
-    #     user_id = self.request.user.pk
-    #     owner = CarOwner.objects.get(user_id=user_id)
-    #     try:
-    #         req = Request.objects.filter(userId=owner)
-    #         print(req)
-    #         main = maintenance.objects.filter(requestId=req)
-    #         print(req)
-    #         return main
-    #     except CarOwner.DoesNotExist:
-    #         raise NotFound("no request")
+    def get_queryset(self):
+        user_id = self.request.user.pk
+        owner = CarOwner.objects.get(user_id=user_id)
+        try:
+            req = Request.objects.filter(userId=owner)
+            main = maintenance.objects.filter(requestId__in=req)
+            return main
+        except CarOwner.DoesNotExist:
+            raise NotFound("no request")
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
@@ -851,7 +849,10 @@ class MaintenanceViewSet (ModelViewSet):
         Owner = CarOwner.objects.get(user_id=user)
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
-        request.data["transactionStatus"] = 2
+        if shop.status == 'CANCELLED':  # Assuming you have a 'status' field
+            request.data["transactionStatus"] = 6
+        else:
+            request.data["transactionStatus"] = 2
         # devices = FCMDevice.objects.get(user_id=shop.workshopId.pk)
         # print('oooooooooooooooooooooooooooooooooooooooooo')
         # print(devices.registration_id)
@@ -931,7 +932,10 @@ class shopMaintenanceViewSet (ModelViewSet):
         # conn.request("POST", "/fcm/send", payload, headers)
         # res = conn.getresponse()
         # data = res.read()
-        request.data["transactionStatus"] = 3
+        if shop.status == 'CANCELLED':  # Assuming you have a 'status' field
+            request.data["transactionStatus"] = 6
+        else:
+            request.data["transactionStatus"] = 3
         request.data["userId"] = shop.userId.pk
         request.data['requestId'] = request_id
         request.data["carsId"] = shop.carsId.pk
@@ -1055,7 +1059,10 @@ class AcceptMaintenanceViewSet (ModelViewSet):
         # conn.request("POST", "/fcm/send", payload, headers)
         # res = conn.getresponse()
         # data = res.read()
-        request.data["transactionStatus"] = 5
+        if shop.status == 'CANCELLED':  # Assuming you have a 'status' field
+            request.data["transactionStatus"] = 6
+        else:
+            request.data["transactionStatus"] = 5
         print(shop.pk)
         request.data["userId"] = Owner.pk
         request.data['requestId'] = request_id
@@ -1235,7 +1242,7 @@ class Origin_BrandViewSet (ModelViewSet):
     def list(self, request, *args, **kwargs):
         data = {}
         serializer = self.get_serializer(self.queryset, many=True)
-        origins = origin.objects.all()
+        origins = Origin.objects.all()
         for ori in origins:
             origin_name = ori
             brand_list = Brand.objects.filter(origin=ori)
@@ -1343,90 +1350,68 @@ class ProductPartViewSet (ModelViewSet):
     #     print(result.values_list("origin", flat=True))
     #     return result
 
+    def create(self, request, *args, **kwargs):
+        # request.data._mutable = True
+        data = request.data
+        user = self.request.user.pk
+        part_supplier = PartSupplier.objects.get(user_id=user)
+        # request.data['partSupplierId'] = part_supplier.pk
+        # request.data._mutable = False
+        # print(request.data)
+
+        print("1")
+        print(part_supplier.pk)
+        product = request.data.get('productId')
+        model = request.data.get('CarModel')
+        product_info = {}
+        for i in product.split(','):
+            print(i)
+            seira = self.get_serializer(
+                data={'productId': i, 'CarModel': model, 'partSupplierId': part_supplier.pk})
+            seira.is_valid(raise_exception=True)
+            seira.save()
+        return Response({})
     # def create(self, request, *args, **kwargs):
     #     request.data._mutable = True
     #     data = request.data
-    #     user = self.request.user.pk
-    #     part_supplier = PartSupplier.objects.get(user_id=user)
-    #     request.data['partSupplierId'] = part_supplier.pk
-    #     print("1")
-    #     print(part_supplier.pk)
 
-    #     product_info = {}
-    #     for product_data in data:
-    #         product_info[product_data] = data.get(product_data, None)
-    #         print(product_data)
-    #     origin_brands = []
-    #     print(product_info, "@@@@@@@@@@@@")
-    #     brands = product_info.get('brands', None)
-    #     brands_list = [int(brand)
-    #                    for brand in brands.split(',') if brand.isdigit()]
-    #     print(brands_list)
-    #     origin_brands = storeBrands.objects.filter(
-    #         partSupplierId=part_supplier.pk, brands__in=brands_list)
-    #     #     brands_list = brands.split(',')
-    #     #     for brand in brands_list:
-    #     #         b = Brand.objects.filter(id=brand).first()
-    #     #         a = int(brand)
-    #     #         print(type(a))
-    #     #         print(brands)
-    #     #         print(b)
-    #     #         if b:
-    #     #             origin_brands = storeBrands.objects.filter(
-    #     #                 partSupplierId=part_supplier.pk, brands=[16, 17])
-    #     print(origin_brands.count(), brands_list.__len__())
-    #     if origin_brands.count() == brands_list.__len__():
-    #         for i in origin_brands:
-    #             product_info["brands"] = i.brands.pk
-    #             print(i.brands.pk)
-    #             print(product_info)
-    #             product = ProductPartSupplierSerializer(data=product_info)
-    #             product.is_valid(raise_exception=True)
-    #             product.save()
+    #     # Get user and part supplier
+    #     user = self.request.user
+    #     part_supplier = PartSupplier.objects.get(user_id=user.pk)
 
-    #     return Response(origin_brands.values(), status=status.HTTP_200_OK)
+    #     # Validate data
+    #     try:
+    #         # Convert product IDs, car model IDs, and count to integers
+    #         product_ids = [int(id) for id in data['productId'].split(',')]
+    #         car_model_ids = [int(id) for id in data['carModel'].split(',')]
+    #         count = int(data['count'])
 
-    def create(self, request, *args, **kwargs):
-        request.data._mutable = True
-        data = request.data
+    #         # Validate existence of products, car models, and brands
+    #         Product.objects.get_many(pk=product_ids)
+    #         CarModel.objects.get_many(pk=car_model_ids)
+    #         brand = Brand.objects.get(pk=data['brands'])
 
-        # Get user and part supplier
-        user = self.request.user
-        part_supplier = PartSupplier.objects.get(user_id=user.pk)
+    #     except (ValueError, Product.DoesNotExist, CarModel.DoesNotExist, Brand.DoesNotExist) as e:
+    #         raise serializers.ValidationError({"error": str(e)})
 
-        # Validate data
-        try:
-            # Convert product IDs, car model IDs, and count to integers
-            product_ids = [int(id) for id in data['productId'].split(',')]
-            car_model_ids = [int(id) for id in data['carModel'].split(',')]
-            count = int(data['count'])
+    #     # Iterate through product IDs and create ProductPartSupplier instances
+    #     for product_id in product_ids:
+    #         product_part_supplier_data = {
+    #             'partSupplierId': part_supplier.pk,
+    #             'productId': product_id,
+    #             'count': count,
+    #             'price': data['price'],  # Assuming price is always provided
+    #             'brands': brand,  # Assuming all products have the same brand
+    #         }
+    #         product_part_supplier_serializer = self.get_serializer(
+    #             data=product_part_supplier_data)
+    #         product_part_supplier_serializer.is_valid(raise_exception=True)
+    #         product_part_supplier = product_part_supplier_serializer.save()
 
-            # Validate existence of products, car models, and brands
-            Product.objects.get_many(pk=product_ids)
-            CarModel.objects.get_many(pk=car_model_ids)
-            brand = Brand.objects.get(pk=data['brands'])
+    #         # Assign product to car models
+    #         product_part_supplier.car_models.set(car_model_ids)
 
-        except (ValueError, Product.DoesNotExist, CarModel.DoesNotExist, Brand.DoesNotExist) as e:
-            raise serializers.ValidationError({"error": str(e)})
-
-        # Iterate through product IDs and create ProductPartSupplier instances
-        for product_id in product_ids:
-            product_part_supplier_data = {
-                'partSupplierId': part_supplier.pk,
-                'productId': product_id,
-                'count': count,
-                'price': data['price'],  # Assuming price is always provided
-                'brands': brand,  # Assuming all products have the same brand
-            }
-            product_part_supplier_serializer = self.get_serializer(
-                data=product_part_supplier_data)
-            product_part_supplier_serializer.is_valid(raise_exception=True)
-            product_part_supplier = product_part_supplier_serializer.save()
-
-            # Assign product to car models
-            product_part_supplier.car_models.set(car_model_ids)
-
-            return Response(status=status.HTTP_201_CREATED)
+    #         return Response(status=status.HTTP_201_CREATED)
 
 
 class CarModelViewSet(ModelViewSet):
@@ -1627,12 +1612,19 @@ def add(request):
 
     }
 
-    for i in cars:
-        for x in cars[i]:
-            ori = Brand(name=x, origin=origin.objects.get(name=i))
-            print(ori)
-            ori.save()
-    return Response()
+    existing_origins = Origin.objects.all()
+
+    for origin_name, car_list in cars.items():
+        # Get or create the origin object
+        origin, created = Origin.objects.get_or_create(name=origin_name)
+
+        # Save brands if origin wasn't created in this loop
+        if not created:
+            for car_name in car_list:
+                brand = Brand(name=car_name, origin=origin)
+                brand.save()
+
+    return Response("Brands added successfully.")
 
 
 class locationsViewSet(ModelViewSet):
@@ -1702,7 +1694,7 @@ def AddOrigin(request):
     ]
 
     for i in origin_type:
-        ori = origin(name=i)
+        ori = Origin(name=i)
         print(ori)
         ori.save()
     return Response()

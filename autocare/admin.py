@@ -1,8 +1,8 @@
 from django.contrib import admin
-from . models import User, origin, TowCarOwner, Store, storeBrands, TowRequest, Images, Brand,  maintenance, RequestType, WorkShop, WorkShopOwner, TowCars, TowBrand, TowOrigin, CarModel, location, CarOwner, Product, TransactionStatus, Status, PartSupplier, ProductPartSupplier, Cars, Specialist, workshopBrands, location, City, Request
+from . models import User, Origin, TowCarOwner, Store, storeBrands, TowRequest, Images, Brand,  maintenance, RequestType, WorkShop, WorkShopOwner, TowCars, TowBrand, TowOrigin, CarModel, location, CarOwner, Product, TransactionStatus, Status, PartSupplier, ProductPartSupplier, Cars, Specialist, workshopBrands, location, City, Request
 
 admin.site.register(User)
-admin.site.register(origin)
+admin.site.register(Origin)
 admin.site.register(Brand)
 admin.site.register(WorkShopOwner)
 admin.site.register(WorkShop)

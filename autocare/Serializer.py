@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WorkShop, CarModel, workshopBrands, Images, RequestType, TowCars, City, TransactionStatus, Status, Specialist, TowBrand, Store, storeBrands, TowOrigin, ProductPartSupplier, Request, Specialist, Brand, CarOwner, Cars,  PartSupplier, Product, TowCarOwner, TowRequest, User, WorkShopOwner, origin, checkup, location, maintenance, WorkShopImages
+from .models import WorkShop, CarModel, workshopBrands, Images, RequestType, TowCars, City, TransactionStatus, Status, Specialist, TowBrand, Store, storeBrands, TowOrigin, ProductPartSupplier, Request, Specialist, Brand, CarOwner, Cars,  PartSupplier, Product, TowCarOwner, TowRequest, User, WorkShopOwner, Origin, checkup, location, maintenance, WorkShopImages
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.hashers import make_password
@@ -58,9 +58,8 @@ class TowBrandSerializer (serializers.ModelSerializer):
 
 class ProductPartSupplierSerializer(serializers.ModelSerializer):
     # brands = serializers.ListField(write_only=True)
-    partBrands = serializers.SerializerMethodField(read_only=True)
     partBrandsName = serializers.SerializerMethodField(read_only=True)
-    carModel = serializers.SerializerMethodField(read_only=True)
+    # carModel = serializers.SerializerMethodField(read_only=True)
     productName = serializers.CharField(
         source='productId.productName', read_only=True)
     category = serializers.CharField(
@@ -69,34 +68,26 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
         source='productId.description', read_only=True)
     productImage = serializers.CharField(
         source='productId.productImage', read_only=True)
-    available = serializers.CharField(
-        source='productId.available', read_only=True)
-    productId = serializers.ListField(write_only=True)
+    # productId = serializers.ListField(write_only=True)
 
     class Meta:
         model = ProductPartSupplier
-        fields = ['partSupplier_id',
-                  'productId', 'productName', 'category', 'carModel', 'description', 'productImage',
-                  'available', 'brands', 'count', 'partBrandsName', 'partBrands', 'price']
+        fields = ['partSupplierId',
+                  'productId', 'productName', 'category', 'CarModel', 'description', 'productImage',
+                  'partBrandsName']
 
     def create(self, validated_data):
         return super().create(validated_data)
 
-    def get_partBrands(self, obj):
-        print(obj)
-        print(obj.pk)
-        Brand = storeBrands.objects.filter(partSupplier_id=obj.pk)
-        return Brand.values_list("brands__name", flat=True)
-
     def get_partBrandsName(self, obj):
-        brand_id = obj.brands_id
-        brand_name = Brand.objects.get(id=brand_id)
-        return brand_name
+        brand_id = obj.CarModel.brand.pk
+        brand_name = Brand.objects.filter(id=brand_id)
+        return brand_name.values()
 
-    def get_carModel(self, obj):
-        brand_id = obj.brands_id
-        Brand = CarModel.objects.filter(partSupplierId=obj.pk)
-        return Brand.values_list("brands__name", flat=True)
+    # def get_carModel(self, obj):
+    #     brand_id = obj.brands_id
+    #     Brand = CarModel.objects.filter(partSupplierId=obj.pk)
+    #     return Brand.values_list("brands__name", flat=True)
 
 
 class PartSupplierSerializer (serializers.ModelSerializer):
@@ -156,7 +147,7 @@ class storeBrandsSerializer (serializers.ModelSerializer):
 
 class OriginSerializer (serializers.ModelSerializer):
     class Meta:
-        model = origin
+        model = Origin
         fields = ['id', 'name']
 
 
@@ -309,19 +300,19 @@ class RequestSerializer (serializers.ModelSerializer):
         print(obj)
         print(obj.pk)
         Brand = maintenance.objects.filter(requestId=obj.pk)
-        return Brand.values_list("starts", flat=True)
+        return Brand
 
     def get_cost(self, obj):
         print(obj)
         print(obj.pk)
         Brand = maintenance.objects.filter(requestId=obj.pk)
-        return Brand.values_list("cost", flat=True)
+        return Brand
 
     def get_endTime(self, obj):
         print(obj)
         print(obj.pk)
         Brand = maintenance.objects.filter(requestId=obj.pk)
-        return Brand.values_list("ends", flat=True)
+        return Brand
 
     def get_description(self, obj):
         print(obj)
