@@ -375,6 +375,20 @@ class PartSupplierViewSet (ModelViewSet):
         return Response(response_data, status=status.HTTP_201_CREATED)
 
 
+class brandStoreViewSet (ModelViewSet):
+    queryset = storeBrands.objects.all().order_by('pk')
+    serializer_class = storeBrandsSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['partSupplierId', 'brands']
+    # permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        u = PartSupplier.objects.get(user_id=user.pk)
+        queryset = storeBrands.objects.filter(partSupplierId=u.pk)
+        return queryset
+
+
 class productViewSet (ModelViewSet):
     queryset = Product.objects.all().order_by('pk')
     serializer_class = productSerializer
@@ -1371,7 +1385,7 @@ class ProductPartViewSet (ModelViewSet):
                 data={'productId': i, 'CarModel': model, 'partSupplierId': part_supplier.pk})
             seira.is_valid(raise_exception=True)
             seira.save()
-        return Response({})
+        return Response(seira.data, status=status.HTTP_200_OK)
     # def create(self, request, *args, **kwargs):
     #     request.data._mutable = True
     #     data = request.data

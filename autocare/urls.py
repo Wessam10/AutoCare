@@ -40,6 +40,7 @@ routers.register('tokenDevice', views.tokenDeviceViewSet)
 routers.register('Status', views.StatusViewSet)
 routers.register('TransactionStatus', views.TransactionStatusViewSet)
 routers.register('RequestType', views.RequestTypeViewSet)
+routers.register('brandStore', views.brandStoreViewSet)
 # routers.register('ToggleTowCarAvailability',
 #                  views.ToggleTowCarAvailability, basename="Availability")
 routers.register('ImageViewSet', views.ImageViewSet, basename="image")
@@ -71,5 +72,5 @@ urlpatterns = [
     path('AddCity', views.AddCity),
     path('AddProduct', views.AddProduct),
     path('AddTowOrigin', views.AddTowOrigin),
-    path('AddTowBrand', views.AddTowBrand),
+    path('     ', views.AddTowBrand),
 ]

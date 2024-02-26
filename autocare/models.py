@@ -290,7 +290,7 @@ class ProductPartSupplier(models.Model):
     status = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.partSupplierId.user_id.fullName
+        return self.productId.productName
 
 
 class storeBrands (models.Model):
