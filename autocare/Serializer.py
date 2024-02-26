@@ -140,9 +140,11 @@ class workshopBrandsSerializer (serializers.ModelSerializer):
 
 
 class storeBrandsSerializer (serializers.ModelSerializer):
+    name = serializers.CharField(source='brands.name')
+
     class Meta:
         model = storeBrands
-        fields = ['brands', 'partSupplierId']
+        fields = ['brands', 'name', 'partSupplierId']
 
 
 class OriginSerializer (serializers.ModelSerializer):
