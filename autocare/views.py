@@ -359,6 +359,9 @@ class PartSupplierViewSet (ModelViewSet):
         token_serializer = MyTokenObtainPairSerializer()
         token = token_serializer.get_token(us)
         k = self.get_serializer(data=request_data)
+        k.is_valid(raise_exception=True)
+        if k.errors:
+            print(k.errors)
         k.is_valid()
         k.save()
         # Include the token in the response data
@@ -370,8 +373,6 @@ class PartSupplierViewSet (ModelViewSet):
 
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
-
-        return super().create(request, *args, **kwargs)
 
 
 class productViewSet (ModelViewSet):

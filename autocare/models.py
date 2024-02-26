@@ -285,7 +285,8 @@ class ProductPartSupplier(models.Model):
     partSupplierId = models.ForeignKey(
         PartSupplier, on_delete=models.CASCADE)
     productId = models.ForeignKey(Product, on_delete=models.CASCADE)
-    CarModel = models.ForeignKey(CarModel, on_delete=models.DO_NOTHING)
+    CarModel = models.ForeignKey(
+        CarModel, on_delete=models.DO_NOTHING, null=True, blank=True)
     status = models.BooleanField(default=True)
 
     def __str__(self):

@@ -92,7 +92,7 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
 
 class PartSupplierSerializer (serializers.ModelSerializer):
     brands = serializers.ListField(write_only=True)
-    carModel = serializers.ListField(write_only=True)
+
     storeBrand = serializers.SerializerMethodField(read_only=True)
     originName = serializers.CharField(
         source='origin.name', read_only=True)
@@ -100,7 +100,7 @@ class PartSupplierSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = PartSupplier
-        fields = ['user_id', 'user', 'brands', 'storeBrand', 'carModel', 'originName', 'origin',  'location', 'address',
+        fields = ['user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
                   'storeName', 'contactNumber', 'logo', 'storeAvatar']
 
     def create(self, validated_data):
@@ -309,10 +309,12 @@ class RequestSerializer (serializers.ModelSerializer):
         return Brand
 
     def get_endTime(self, obj):
-        print(obj)
-        print(obj.pk)
-        Brand = maintenance.objects.filter(requestId=obj.pk)
-        return Brand
+        try:
+            # Attempt to retrieve the related maintenance object and its end_time
+            maintenance = maintenance.objects.get(requestId=obj.pk)
+            return str(maintenance.end_time) if maintenance.end_time else None
+        except maintenance.DoesNotExist:
+            return None
 
     def get_description(self, obj):
         print(obj)
