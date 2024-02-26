@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'fcm_django',
+    'django_ratelimit',
 ]
 
 MIDDLEWARE = [
@@ -198,4 +199,14 @@ FCM_DJANGO_SETTINGS = {
     "APP_VERBOSE_NAME": "What ever name",
     "ONE_DEVICE_PER_USER": False,
     "DELETE_INACTIVE_DEVICES": False,
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://localhost:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
 }

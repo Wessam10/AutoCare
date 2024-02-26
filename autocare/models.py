@@ -235,6 +235,7 @@ class Request(models.Model):
     requestType = models.CharField(max_length=255)
     date = models.DateTimeField(null=True, blank=True)
     notes = models.CharField(max_length=255, null=True)
+    created = models.DateTimeField(auto_now_add=True)
     transactionStatus = models.ForeignKey(
         TransactionStatus, on_delete=models.CASCADE, default=1)
     status = models.ForeignKey(

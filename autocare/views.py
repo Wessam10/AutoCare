@@ -25,15 +25,17 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_201_CREATED
 from django.contrib.auth import authenticate
-from . import models
-from django.core.exceptions import ValidationError
-import logging
+from django.utils import timezone
+from django_ratelimit.decorators import ratelimit
 from django.db.models import Q
-from .models import (Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
+from django.contrib.auth.models import AbstractUser
+
+
+from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
+from .models import (User, Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
                      TowCarOwner, TowRequest, User, WorkShop, WorkShopImages, workshopBrands,
                      WorkShopOwner, checkup, location, maintenance, Origin, City, ProductPartSupplier,
                      Product, TowCars, CarModel, TowBrand, TowOrigin, storeBrands, Images, Store, Status, TransactionStatus, RequestType)
-from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, TowBrandSerializer, TowOriginSerializer,
                          OriginSerializer, PartSupplierSerializer,
                          RequestSerializer, TowCarOwnerSerializer,
@@ -788,7 +790,12 @@ def _send_notification(self, device, title, body):
     data = res.read()
 
 
-class MaintenanceViewSet (ModelViewSet):
+class UserMixin(ModelViewSet):
+    def get_user(self):
+        return self.request.user
+
+
+class MaintenanceViewSet (UserMixin, ModelViewSet):
     queryset = maintenance.objects.all().order_by('pk')
     serializer_class = maintenanceSerializer
     # permission_classes = [IsAuthenticated]
@@ -803,11 +810,17 @@ class MaintenanceViewSet (ModelViewSet):
         except CarOwner.DoesNotExist:
             raise NotFound("no request")
 
+    def get_ratelimit_key(self):
+        return self.get_user().pk
+
+    @ratelimit(key=get_ratelimit_key, rate='10/m')
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         user = self.request.user.pk
+
         request_data = request.data
         carOwner = CarOwner.objects.get(user_id=user)
+
         workshop_id = request.data.get('workshopId')
         request.data["userId"] = carOwner.pk
         request.data["transactionStatus"] = 1
@@ -919,7 +932,7 @@ class MaintenanceViewSet (ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class shopMaintenanceViewSet (ModelViewSet):
+class shopMaintenanceViewSet (UserMixin, ModelViewSet):
     queryset = maintenance.objects.all().order_by('pk')
     serializer_class = maintenanceSerializer
 
@@ -1350,32 +1363,19 @@ class ProductPartViewSet (ModelViewSet):
     queryset = ProductPartSupplier.objects.filter()
     serializer_class = ProductPartSupplierSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['partSupplierId', 'brands']
+    filterset_fields = ['partSupplierId']
     # permission_classes = [IsAuthenticated, PartSupplierAuth]
 
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     brand_name = self.request.query_params.get('brands')
-    #     print(brand_name)
-    #     queryset1 = storeBrands.objects.none()  # Initialize as an empty queryset
-    #     if brand_name:
-    #         queryset1 = storeBrands.objects.filter(brands=brand_name)
-    #         print('quer')
-    #         print(queryset1)
-    #         print(queryset1.values_list("partSupplierId", flat=True))
-    #         print('quer')
-    #         if not queryset1.exists():
-    #             print('quer')
-    #             raise NotFound(
-    #                 "PartSupplier not found for the specified brand.")
-    #             print(queryset1)
-    #     if queryset1.exists():
-    #         result = PartSupplier.objects.filter(
-    #             id__in=queryset1.values_list("partSupplierId", flat=True))
-    #     else:
-    #         result = queryset
-    #     print(result.values_list("origin", flat=True))
-    #     return result
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            user_id = self.request.user.pk
+            owner = PartSupplier.objects.get(user_id=user_id)
+            k = ProductPartSupplier.objects.filter(partSupplierId=owner)
+            return k
+        else:
+            w = ProductPartSupplier.objects.all()
+            return w
 
     def create(self, request, *args, **kwargs):
         # request.data._mutable = True
