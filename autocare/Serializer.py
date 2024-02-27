@@ -62,11 +62,13 @@ class PartSupplierSerializer (serializers.ModelSerializer):
     originName = serializers.CharField(
         source='origin.name', read_only=True)
     user = UserSerializer(source='user_id', read_only=True)
+    storeLogo = serializers.ImageField(source='logo')
+    avatarStore = serializers.ImageField(source='storeAvatar')
 
     class Meta:
         model = PartSupplier
         fields = ['id', 'user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
-                  'storeName', 'contactNumber', 'logo', 'storeAvatar']
+                  'storeName', 'contactNumber', 'storeLogo', 'avatarStore']
 
     def create(self, validated_data):
         brands_data = validated_data.pop(

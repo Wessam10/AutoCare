@@ -198,7 +198,7 @@ class CarOwnerRequestViewSet (ModelViewSet):
 
 
 class CurrentCarsViewSet (ModelViewSet):
-    pagination_class = StandardResultsSetPagination
+    # pagination_class = StandardResultsSetPagination
     queryset = Request.objects.all().order_by('pk')
     serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated]
@@ -209,9 +209,9 @@ class CurrentCarsViewSet (ModelViewSet):
         user_id = self.request.user.pk
         owner = WorkShopOwner.objects.get(user_id=user_id)
         shop = WorkShop.objects.filter(workshopOwnerId=owner).first()
-        k = Request.objects.filter(workshopId=shop).order_by('pk')
-        if k.transactionStatus == "transactionStatus":
-            return k
+        k = Request.objects.filter(
+            workshopId=shop, transactionStatus=5).order_by('pk')
+        return k
 
 
 class BrandViewSet (ModelViewSet):
