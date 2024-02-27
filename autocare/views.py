@@ -26,10 +26,10 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_201_CREATED
 from django.contrib.auth import authenticate
 from django.utils import timezone
-from django_ratelimit.decorators import ratelimit
 from django.db.models import Q
-from django.contrib.auth.models import AbstractUser
-
+from rest_framework.throttling import UserRateThrottle
+from rest_framework.exceptions import APIException
+from django.core.exceptions import PermissionDenied
 
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .models import (User, Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
@@ -790,15 +790,16 @@ def _send_notification(self, device, title, body):
     data = res.read()
 
 
-class UserMixin(ModelViewSet):
-    def get_user(self):
-        return self.request.user
+class ThrottledResponse(APIException):
+    status_code = 429  # Use HTTP status code for "Too Many Requests"
+    default_detail = 'Rate limit exceeded'
 
 
-class MaintenanceViewSet (UserMixin, ModelViewSet):
+class MaintenanceViewSet (ModelViewSet):
     queryset = maintenance.objects.all().order_by('pk')
     serializer_class = maintenanceSerializer
     # permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def get_queryset(self):
         user_id = self.request.user.pk
@@ -810,66 +811,147 @@ class MaintenanceViewSet (UserMixin, ModelViewSet):
         except CarOwner.DoesNotExist:
             raise NotFound("no request")
 
-    def get_ratelimit_key(self):
-        return self.get_user().pk
+    # def create(self, request, *args, **kwargs):
+    #     try:
+    #         request.data._mutable = True
+    #         user = self.request.user.pk
 
-    @ratelimit(key=get_ratelimit_key, rate='10/m')
+    #         request_data = request.data
+    #         carOwner = CarOwner.objects.get(user_id=user)
+
+    #         workshop_id = request.data.get('workshopId')
+    #         request.data["userId"] = carOwner.pk
+    #         request.data["transactionStatus"] = 1
+    #         request_info = {}
+    #         # devices = FCMDevice.objects.get(user_id=workshop_id)
+    #         # print(devices.registration_id)
+    #         # print('ppppppppppppppppppppppppppppppppppppppppp')
+    #         # conn = http.client.HTTPSConnection("fcm.googleapis.com")
+    #         # payload = json.dumps({
+    #         #     "to": "cP7pxAjASjuCuH3HKumxbC:APA91bHNHBwWrDXf1whbLaOyvkLZuyuCRFF_JmZOWW4MDaeb7zobabASMK7KIHOYovpxqlbUlXcnw_0CyuGHFwHn79Aojrh_hLe71WgB5bjNW6wr1fvH776X86hXu8XMcln1SqyERRVQ",
+    #         #     "notification": {
+    #         #         "title": "New Request",
+    #         #         "body": "You have new Maintenance Request",
+    #         #         "mutable_content": True,
+    #         #         "sound": "Tri-tone"
+    #         #     },
+
+    #         # })
+    #         # headers = {
+    #         #     'Content-Type': 'application/json',
+    #         #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+    #         # }
+    #         # conn.request("POST", "/fcm/send", payload, headers)
+    #         # res = conn.getresponse()
+    #         # data = res.read()
+
+    #         for data in request_data:
+    #             print(data)
+    #             request_info[data] = request_data.get(data, None)
+
+    #         serializer = RequestSerializer(data=request_info)
+    #         serializer.is_valid()
+    #         if serializer.errors:
+    #             print(serializer.errors)
+    #         serializer.is_valid(raise_exception=True)
+    #         r1 = serializer.save()
+
+    #         request_data["requestId"] = r1.pk
+    #         print(request_data)
+    #         print("1234")
+    #         k = maintenanceSerializer(data=request_data,)
+    #         print(k.is_valid())
+    #         k.is_valid()
+    #         if serializer.errors:
+    #             print(serializer.errors)
+    #         k.is_valid(raise_exception=True)
+    #         k.save()
+
+    #         return Response(request.data, status=status.HTTP_200_OK)
+
+    def handle_permission_error(self, request):
+        # Check if specific permission error is related to rate limiting
+        if isinstance(self.throttled(request=request), ThrottledResponse):
+            # Extract remaining time from the exception detail
+            detail = self.throttled(request=request).detail
+            remaining_seconds = int(detail.split("available in ")[
+                                    1].split(" seconds")[0])
+
+            # Return custom response with remaining time information
+            return Response({
+                "detail": "Rate limit exceeded. Try again in " + str(remaining_seconds) + " seconds."
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        # ... handle other permission errors (if needed) ...
+
+        # Raise a generic error if the reason is not related to rate limiting
+        raise PermissionDenied(
+            "User does not have permission to perform this action.")
+
     def create(self, request, *args, **kwargs):
-        request.data._mutable = True
-        user = self.request.user.pk
+        try:
+            if not self.check_permissions(request):
 
-        request_data = request.data
-        carOwner = CarOwner.objects.get(user_id=user)
+                return self.handle_permission_error(request)
+            request.data._mutable = True
+            user = self.request.user.pk
 
-        workshop_id = request.data.get('workshopId')
-        request.data["userId"] = carOwner.pk
-        request.data["transactionStatus"] = 1
-        request_info = {}
-        # devices = FCMDevice.objects.get(user_id=workshop_id)
-        # print(devices.registration_id)
-        # print('ppppppppppppppppppppppppppppppppppppppppp')
-        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
-        # payload = json.dumps({
-        #     "to": "cP7pxAjASjuCuH3HKumxbC:APA91bHNHBwWrDXf1whbLaOyvkLZuyuCRFF_JmZOWW4MDaeb7zobabASMK7KIHOYovpxqlbUlXcnw_0CyuGHFwHn79Aojrh_hLe71WgB5bjNW6wr1fvH776X86hXu8XMcln1SqyERRVQ",
-        #     "notification": {
-        #         "title": "New Request",
-        #         "body": "You have new Maintenance Request",
-        #         "mutable_content": True,
-        #         "sound": "Tri-tone"
-        #     },
+            request_data = request.data
+            carOwner = CarOwner.objects.get(user_id=user)
 
-        # })
-        # headers = {
-        #     'Content-Type': 'application/json',
-        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-        # }
-        # conn.request("POST", "/fcm/send", payload, headers)
-        # res = conn.getresponse()
-        # data = res.read()
+            workshop_id = request.data.get('workshopId')
+            request.data["userId"] = carOwner.pk
+            request.data["transactionStatus"] = 1
+            request_info = {}
+            # devices = FCMDevice.objects.get(user_id=workshop_id)
+            # print(devices.registration_id)
+            # print('ppppppppppppppppppppppppppppppppppppppppp')
+            # conn = http.client.HTTPSConnection("fcm.googleapis.com")
+            # payload = json.dumps({
+            #     "to": "cP7pxAjASjuCuH3HKumxbC:APA91bHNHBwWrDXf1whbLaOyvkLZuyuCRFF_JmZOWW4MDaeb7zobabASMK7KIHOYovpxqlbUlXcnw_0CyuGHFwHn79Aojrh_hLe71WgB5bjNW6wr1fvH776X86hXu8XMcln1SqyERRVQ",
+            #     "notification": {
+            #         "title": "New Request",
+            #         "body": "You have new Maintenance Request",
+            #         "mutable_content": True,
+            #         "sound": "Tri-tone"
+            #     },
 
-        for data in request_data:
-            print(data)
-            request_info[data] = request_data.get(data, None)
+            # })
+            # headers = {
+            #     'Content-Type': 'application/json',
+            #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+            # }
+            # conn.request("POST", "/fcm/send", payload, headers)
+            # res = conn.getresponse()
+            # data = res.read()
 
-        serializer = RequestSerializer(data=request_info)
-        serializer.is_valid()
-        if serializer.errors:
-            print(serializer.errors)
-        serializer.is_valid(raise_exception=True)
-        r1 = serializer.save()
+            for data in request_data:
+                print(data)
+                request_info[data] = request_data.get(data, None)
 
-        request_data["requestId"] = r1.pk
-        print(request_data)
-        print("1234")
-        k = maintenanceSerializer(data=request_data,)
-        print(k.is_valid())
-        k.is_valid()
-        if serializer.errors:
-            print(serializer.errors)
-        k.is_valid(raise_exception=True)
-        k.save()
+            serializer = RequestSerializer(data=request_info)
+            serializer.is_valid()
+            if serializer.errors:
+                print(serializer.errors)
+            serializer.is_valid(raise_exception=True)
+            r1 = serializer.save()
 
-        return Response(request.data, status=status.HTTP_200_OK)
+            request_data["requestId"] = r1.pk
+            print(request_data)
+            print("1234")
+            k = maintenanceSerializer(data=request_data,)
+            print(k.is_valid())
+            k.is_valid()
+            if serializer.errors:
+                print(serializer.errors)
+            k.is_valid(raise_exception=True)
+            k.save()
+
+            return Response(request.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Handle other potential exceptions
+            print(f"An error occurred: {e}")
+            return Response({"error": "An unexpected error occurred. Please try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def update(self, request, *args, **kwargs):
         request_id = kwargs.get('pk')
@@ -932,7 +1014,7 @@ class MaintenanceViewSet (UserMixin, ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class shopMaintenanceViewSet (UserMixin, ModelViewSet):
+class shopMaintenanceViewSet (ModelViewSet):
     queryset = maintenance.objects.all().order_by('pk')
     serializer_class = maintenanceSerializer
 
@@ -1439,6 +1521,25 @@ class ProductPartViewSet (ModelViewSet):
     #         product_part_supplier.car_models.set(car_model_ids)
 
     #         return Response(status=status.HTTP_201_CREATED)
+
+
+class CarProductPartViewSet (ModelViewSet):
+    queryset = ProductPartSupplier.objects.filter()
+    serializer_class = ProductPartSupplierSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['partSupplierId', 'productId']
+    # permission_classes = [IsAuthenticated, PartSupplierAuth]
+
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.is_authenticated:
+    #         user_id = self.request.user.pk
+    #         owner = PartSupplier.objects.get(user_id=user_id)
+    #         k = ProductPartSupplier.objects.filter(partSupplierId=owner)
+    #         return k
+    #     else:
+    #         w = ProductPartSupplier.objects.all()
+    #         return w
 
 
 class CarModelViewSet(ModelViewSet):

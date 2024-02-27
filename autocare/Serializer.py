@@ -66,7 +66,7 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
         source='productId.category', read_only=True)
     description = serializers.CharField(
         source='productId.description', read_only=True)
-    productImage = serializers.CharField(
+    productImage = serializers.ImageField(
         source='productId.productImage', read_only=True)
     # productId = serializers.ListField(write_only=True)
 
