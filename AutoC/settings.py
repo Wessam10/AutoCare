@@ -157,7 +157,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'user': '100/day',
-        'anon': '1/day'
+        'anon': '100/day'
 
     }
     # 'EXCEPTION_HANDLER': 'autocare.custom_exception_handler.custom_exception_handler',
@@ -184,7 +184,6 @@ SIMPLE_JWT = {
 #     "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.MyTokenObtainPairSerializer",
 #     # ...
 # }
-AUTH_USER_MODEL = 'autocare.User'
 
 
 class CustomFirebaseCredentials(credentials.ApplicationDefault):

@@ -70,7 +70,8 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        print("aaaaaaaaaaa11111aaaaaaaaaaa")
+        print(serializer)
+        serializer.is_valid(raise_exception=True)
         if serializer.is_valid():
             user = serializer.user
             print('b')
@@ -447,6 +448,7 @@ class TowCarOwnerViewSet (ModelViewSet):
             print(user.errors)
         user.is_valid(raise_exception=True)
         workshopUser = user.save()
+        print(workshopUser)
         request_data["user_id"] = workshopUser.pk
         us = User.objects.get(id=workshopUser.pk)
         token_serializer = MyTokenObtainPairSerializer()
@@ -468,8 +470,6 @@ class TowCarOwnerViewSet (ModelViewSet):
 
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
-        print('aaaa')
-        # return super().create(request, *args, **kwargs)
 
 
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -719,7 +719,6 @@ class WorkShopOwnerViewSet (ModelViewSet):
             print(user.errors)
         user.is_valid(raise_exception=True)
         workshopUser = user.save()
-        workshopUser
         print(workshopUser)
         request_data["user_id"] = workshopUser.pk
         print('done')
@@ -731,15 +730,14 @@ class WorkShopOwnerViewSet (ModelViewSet):
         print(token)
         # Include the token in the response data
         response_data = {
-            'token': str(token.access_token),
+            'access': str(token.access_token),
+            'refresh': str(token),
 
             'user': workshopUser.pk
         }
         k = self.get_serializer(data=request_data,)
         k.is_valid()
         k.save()
-        print(k)
-
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
 
@@ -798,7 +796,7 @@ class ThrottledResponse(APIException):
 class MaintenanceViewSet (ModelViewSet):
     queryset = maintenance.objects.all().order_by('pk')
     serializer_class = maintenanceSerializer
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle]
 
     def get_queryset(self):
@@ -882,15 +880,13 @@ class MaintenanceViewSet (ModelViewSet):
                 "detail": "Rate limit exceeded. Try again in " + str(remaining_seconds) + " seconds."
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-        # ... handle other permission errors (if needed) ...
-
         # Raise a generic error if the reason is not related to rate limiting
         raise PermissionDenied(
             "User does not have permission to perform this action.")
 
     def create(self, request, *args, **kwargs):
         try:
-            if not self.check_permissions(request):
+            if self.check_permissions(request):
 
                 return self.handle_permission_error(request)
             request.data._mutable = True
@@ -1445,7 +1441,7 @@ class ProductPartViewSet (ModelViewSet):
     queryset = ProductPartSupplier.objects.filter()
     serializer_class = ProductPartSupplierSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['partSupplierId']
+    filterset_fields = ['partSupplierId', 'productId']
     # permission_classes = [IsAuthenticated, PartSupplierAuth]
 
     def get_queryset(self):
@@ -1480,47 +1476,18 @@ class ProductPartViewSet (ModelViewSet):
             seira.is_valid(raise_exception=True)
             seira.save()
         return Response(seira.data, status=status.HTTP_200_OK)
-    # def create(self, request, *args, **kwargs):
-    #     request.data._mutable = True
-    #     data = request.data
 
-    #     # Get user and part supplier
-    #     user = self.request.user
-    #     part_supplier = PartSupplier.objects.get(user_id=user.pk)
-
-    #     # Validate data
-    #     try:
-    #         # Convert product IDs, car model IDs, and count to integers
-    #         product_ids = [int(id) for id in data['productId'].split(',')]
-    #         car_model_ids = [int(id) for id in data['carModel'].split(',')]
-    #         count = int(data['count'])
-
-    #         # Validate existence of products, car models, and brands
-    #         Product.objects.get_many(pk=product_ids)
-    #         CarModel.objects.get_many(pk=car_model_ids)
-    #         brand = Brand.objects.get(pk=data['brands'])
-
-    #     except (ValueError, Product.DoesNotExist, CarModel.DoesNotExist, Brand.DoesNotExist) as e:
-    #         raise serializers.ValidationError({"error": str(e)})
-
-    #     # Iterate through product IDs and create ProductPartSupplier instances
-    #     for product_id in product_ids:
-    #         product_part_supplier_data = {
-    #             'partSupplierId': part_supplier.pk,
-    #             'productId': product_id,
-    #             'count': count,
-    #             'price': data['price'],  # Assuming price is always provided
-    #             'brands': brand,  # Assuming all products have the same brand
-    #         }
-    #         product_part_supplier_serializer = self.get_serializer(
-    #             data=product_part_supplier_data)
-    #         product_part_supplier_serializer.is_valid(raise_exception=True)
-    #         product_part_supplier = product_part_supplier_serializer.save()
-
-    #         # Assign product to car models
-    #         product_part_supplier.car_models.set(car_model_ids)
-
-    #         return Response(status=status.HTTP_201_CREATED)
+    def update(self, request, *args, **kwargs):
+        user = self.request.user.pk
+        print(user)
+        owner = PartSupplier.objects.get(user_id=user)
+        print(owner)
+        tow_car = ProductPartSupplier.objects.get(userId=owner)
+        print(tow_car)
+        tow_car.status = not tow_car.status
+        tow_car.save()
+        serializer = self.get_serializer(tow_car)
+        return Response(serializer.data)
 
 
 class CarProductPartViewSet (ModelViewSet):
