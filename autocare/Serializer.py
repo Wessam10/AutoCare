@@ -6,6 +6,14 @@ from django.contrib.auth.hashers import make_password
 import hashlib
 
 
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['user_type'] = user.user_type
+        return token
+
+
 class UserSerializer (serializers.ModelSerializer):
 
     class Meta:
@@ -13,14 +21,6 @@ class UserSerializer (serializers.ModelSerializer):
         # IF SOMTHING GOES WRONG
         fields = ['id', 'fullName',
                   'phoneNumber', 'email', 'avatar', 'password', 'user_type']
-
-
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['user_type'] = user.user_type
-        return token
 
 
 class UserImageSerializer(serializers.ModelSerializer):
@@ -56,43 +56,8 @@ class TowBrandSerializer (serializers.ModelSerializer):
         fields = ['origin',  'originName', 'id', 'name']
 
 
-class ProductPartSupplierSerializer(serializers.ModelSerializer):
-    # brands = serializers.ListField(write_only=True)
-    partBrandsName = serializers.SerializerMethodField(read_only=True)
-    # carModel = serializers.SerializerMethodField(read_only=True)
-    productName = serializers.CharField(
-        source='productId.productName', read_only=True)
-    category = serializers.CharField(
-        source='productId.category', read_only=True)
-    description = serializers.CharField(
-        source='productId.description', read_only=True)
-    productImage = serializers.ImageField(
-        source='productId.productImage', read_only=True)
-    # productId = serializers.ListField(write_only=True)
-
-    class Meta:
-        model = ProductPartSupplier
-        fields = ['partSupplierId',
-                  'productId', 'productName', 'category', 'CarModel', 'description', 'status', 'productImage',
-                  'partBrandsName']
-
-    def create(self, validated_data):
-        return super().create(validated_data)
-
-    def get_partBrandsName(self, obj):
-        brand_id = obj.CarModel.brand.pk
-        brand_name = Brand.objects.filter(id=brand_id)
-        return brand_name.values()
-
-    # def get_carModel(self, obj):
-    #     brand_id = obj.brands_id
-    #     Brand = CarModel.objects.filter(partSupplierId=obj.pk)
-    #     return Brand.values_list("brands__name", flat=True)
-
-
 class PartSupplierSerializer (serializers.ModelSerializer):
     brands = serializers.ListField(write_only=True)
-
     storeBrand = serializers.SerializerMethodField(read_only=True)
     originName = serializers.CharField(
         source='origin.name', read_only=True)
@@ -125,12 +90,56 @@ class PartSupplierSerializer (serializers.ModelSerializer):
         return Brand.values_list("brands__name", flat=True)
 
 
+class ProductPartSupplierSerializer(serializers.ModelSerializer):
+    partSupplier = PartSupplierSerializer(
+        source='partSupplierId', read_only=True)
+    # brands = serializers.ListField(write_only=True)
+    partBrandsName = serializers.SerializerMethodField(read_only=True)
+    # carModel = serializers.SerializerMethodField(read_only=True)
+    productName = serializers.CharField(
+        source='productId.productName', read_only=True)
+    category = serializers.CharField(
+        source='productId.category', read_only=True)
+    description = serializers.CharField(
+        source='productId.description', read_only=True)
+    productImage = serializers.ImageField(
+        source='productId.productImage', read_only=True)
+    # productId = serializers.ListField(write_only=True)
+
+    class Meta:
+        model = ProductPartSupplier
+        fields = ['partSupplierId', 'partSupplier',
+                  'productId', 'productName', 'category', 'CarModel', 'description', 'status', 'productImage',
+                  'partBrandsName']
+
+    def create(self, validated_data):
+        return super().create(validated_data)
+
+    def get_partBrandsName(self, obj):
+        brand_id = obj.CarModel.brand.pk
+        brand_name = Brand.objects.filter(id=brand_id)
+        return brand_name.values()
+
+    # def get_carModel(self, obj):
+    #     brand_id = obj.brands_id
+    #     Brand = CarModel.objects.filter(partSupplierId=obj.pk)
+    #     return Brand.values_list("brands__name", flat=True)
+
+
 class WorkShopOwnerSerializer (serializers.ModelSerializer):
     user = UserSerializer(source='user_id', read_only=True)
 
     class Meta:
         model = WorkShopOwner
         fields = ['id', 'user_id', 'user']
+
+
+class TowCarOwnerSerializer (serializers.ModelSerializer):
+    user = UserSerializer(source='user_id', read_only=True)
+
+    class Meta:
+        model = TowCarOwner
+        fields = ['user_id', 'user']
 
 
 class workshopBrandsSerializer (serializers.ModelSerializer):

@@ -66,10 +66,11 @@ def responseData(data: dict, status: bool, message: str):
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
-    # serializer_class = MyTokenObtainPairSerializer
+    serializer_class = MyTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
+        print(serializer)
         print("aaaaaaaaaaa11111aaaaaaaaaaa")
         if serializer.is_valid():
             user = serializer.user
@@ -696,6 +697,46 @@ class WorkShopOwnerViewSet (ModelViewSet):
         print('www')
         return Response(responseData(data=seri.data, message='Invalid data', status=False), status=status.HTTP_200_OK)
 
+    # def create(self, request, *args, **kwargs):
+    #     request.data._mutable = True
+    #     request_data = request.data
+    #     password = request.data.get('password')
+
+    #     # Hash the password
+    #     hashed_password = make_password(password)
+
+    #     # Update the request data with the hashed password
+    #     request.data['password'] = hashed_password
+    #     user_info = {}
+    #     user_info["user_type"] = "Workshop Owner"
+    #     for user_data in request_data:
+    #         print(user_data)
+    #         user_info[user_data] = request_data.get(user_data, None)
+
+    #     user = UserSerializer(data=user_info)
+    #     user.is_valid()
+    #     if user.errors:
+    #         print(user.errors)
+    #     user.is_valid(raise_exception=True)
+    #     workshopUser = user.save()
+    #     print(workshopUser)
+    #     request_data["user_id"] = workshopUser.pk
+    #     print('done')
+    #     us = User.objects.get(id=workshopUser.pk)
+    #     token_serializer = MyTokenObtainPairSerializer()
+    #     token = token_serializer.get_token(us)
+    #     print(MyTokenObtainPairSerializer)
+    #     print(us)
+    #     print(token)
+    #     # Include the token in the response data
+    #     response_data = {
+    #         'access': str(token.access_token),
+    #         'refresh': str(token),
+
+    #         'user': workshopUser.pk
+    #     }
+    #     # Return the response
+    #     return Response(response_data, status=status.HTTP_201_CREATED)
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         request_data = request.data
@@ -720,7 +761,6 @@ class WorkShopOwnerViewSet (ModelViewSet):
         workshopUser = user.save()
         print(workshopUser)
         request_data["user_id"] = workshopUser.pk
-        print('done')
         us = User.objects.get(id=workshopUser.pk)
         token_serializer = MyTokenObtainPairSerializer()
         token = token_serializer.get_token(us)
@@ -734,6 +774,11 @@ class WorkShopOwnerViewSet (ModelViewSet):
 
             'user': workshopUser.pk
         }
+        k = self.get_serializer(data=request_data,)
+        k.is_valid()
+        k.save()
+        print(k)
+
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
 
