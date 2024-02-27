@@ -6,14 +6,6 @@ from django.contrib.auth.hashers import make_password
 import hashlib
 
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['user_type'] = user.user_type
-        return token
-
-
 class UserSerializer (serializers.ModelSerializer):
 
     class Meta:
@@ -21,6 +13,14 @@ class UserSerializer (serializers.ModelSerializer):
         # IF SOMTHING GOES WRONG
         fields = ['id', 'fullName',
                   'phoneNumber', 'email', 'avatar', 'password', 'user_type']
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['user_type'] = user.user_type
+        return token
 
 
 class UserImageSerializer(serializers.ModelSerializer):
@@ -65,7 +65,7 @@ class PartSupplierSerializer (serializers.ModelSerializer):
 
     class Meta:
         model = PartSupplier
-        fields = ['user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
+        fields = ['id', 'user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
                   'storeName', 'contactNumber', 'logo', 'storeAvatar']
 
     def create(self, validated_data):
@@ -124,6 +124,15 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
     #     brand_id = obj.brands_id
     #     Brand = CarModel.objects.filter(partSupplierId=obj.pk)
     #     return Brand.values_list("brands__name", flat=True)
+
+
+class WPartSupplierSerializer(serializers.ModelSerializer):
+    # partSupplier = PartSupplierSerializer(
+    #     source='partSupplierId', read_only=True)
+
+    class Meta:
+        model = ProductPartSupplier
+        fields = ['partSupplierId']
 
 
 class WorkShopOwnerSerializer (serializers.ModelSerializer):

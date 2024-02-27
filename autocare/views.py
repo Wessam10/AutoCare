@@ -30,6 +30,7 @@ from django.db.models import Q
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.exceptions import APIException
 from django.core.exceptions import PermissionDenied
+from django.db.models import Sum
 
 from .permission import CarOwnerAuth, workshopOwnerAuth, PartSupplierAuth, TowCarOwnerAuth
 from .models import (User, Brand, CarOwner, Cars, PartSupplier, Request, Specialist,
@@ -43,7 +44,7 @@ from .Serializer import (BrandSerializer, CarOwnerSerializer, CarsSerializer, To
                          UserSerializer, WorkShopImageSerializer,
                          WorkShopOwnerSerializer, WorkShopSerializer,
                          checkupSerializer, locationSerializer,
-                         maintenanceSerializer, productSerializer, ImagesSerializer, RequestTypeSerializer, TransactionStatusSerializer, StatusSerializer, CitySerializer, TowCarsSerializer, StoreSerializer, storeBrandsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
+                         maintenanceSerializer, productSerializer, WPartSupplierSerializer, ImagesSerializer, RequestTypeSerializer, TransactionStatusSerializer, StatusSerializer, CitySerializer, TowCarsSerializer, StoreSerializer, storeBrandsSerializer, CarModelSerializer, specialistSerializer, ProductPartSupplierSerializer, MyTokenObtainPairSerializer)
 # C:\Users\MAVERICK\Documents\HRMS\AutoCareCar
 
 
@@ -743,16 +744,18 @@ class WorkShopOwnerViewSet (ModelViewSet):
         password = request.data.get('password')
 
         # Hash the password
+        print('pppppp', password)
         hashed_password = make_password(password)
-
+        print("hhhhhhhh", hashed_password)
         # Update the request data with the hashed password
         request.data['password'] = hashed_password
         user_info = {}
         user_info["user_type"] = "Workshop Owner"
+        print('rrrrrrrrr', request.data)
         for user_data in request_data:
             print(user_data)
             user_info[user_data] = request_data.get(user_data, None)
-
+        print('uuuuuuuu', user_info)
         user = UserSerializer(data=user_info)
         user.is_valid()
         if user.errors:
@@ -1476,6 +1479,27 @@ class favoriteViewSet (ModelViewSet):
 #                 product.save()
 
 #         return Response(origin_brands.values(), status=status.HTTP_200_OK)
+
+class wPartViewSet(ModelViewSet):
+    queryset = ProductPartSupplier.objects.all()  # Use the pre-defined queryset
+    serializer_class = WPartSupplierSerializer
+
+    # def get_queryset(self):
+
+    #     user_id = self.request.user.pk  # Assuming you need user ID
+    #     res = ProductPartSupplier.objects.values('partSupplierId').distinct()
+
+    #     print("22@@", res)
+
+    #     return res
+    def list(self, request, *args, **kwargs):
+        res = ProductPartSupplier.objects.values_list(
+            'partSupplierId').distinct()
+        print("@@", res)
+        partSup = PartSupplier.objects.filter(id__in=res)
+        pp = PartSupplierSerializer(partSup, many=True)
+        return Response(pp.data)
+        return super().list(request, *args, **kwargs)
 
 
 class ProductPartViewSet (ModelViewSet):
