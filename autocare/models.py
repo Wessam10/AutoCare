@@ -76,12 +76,6 @@ class PartSupplier(models.Model):
     def __str__(self):
         return self.user_id.fullName
 
-    @property
-    def avatarStore_url(self):
-        if self.storeAvatar:
-            return self.storeAvatar.url
-        return None
-
 
 class TowCarOwner(models.Model):
     user_id = models.OneToOneField(User, on_delete=models.CASCADE)

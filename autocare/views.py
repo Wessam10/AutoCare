@@ -364,12 +364,16 @@ class PartSupplierViewSet (ModelViewSet):
         us = User.objects.get(id=user_instance.pk)
         token_serializer = MyTokenObtainPairSerializer()
         token = token_serializer.get_token(us)
+
         k = self.get_serializer(data=request_data)
         k.is_valid(raise_exception=True)
+
         if k.errors:
             print(k.errors)
         k.is_valid()
+        print('@@@@@!!!!',  k.is_valid())
         k.save()
+        print('@@@@@!!!!')
         # Include the token in the response data
         response_data = {
             'token': str(token.access_token),
@@ -661,7 +665,8 @@ class tokenDeviceViewSet (ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        user = self.request.user.pk
+        user = self.request.user
+        print(user)
         field_token = request.data.get('mobileToken', None)
         name = request.data.get('Name', None)
 

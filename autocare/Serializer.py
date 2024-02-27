@@ -62,13 +62,13 @@ class PartSupplierSerializer (serializers.ModelSerializer):
     originName = serializers.CharField(
         source='origin.name', read_only=True)
     user = UserSerializer(source='user_id', read_only=True)
-    storeLogo = serializers.ImageField(source='logo')
-    avatarStore = serializers.ImageField(source='storeAvatar')
+    # storeLogo = serializers.ImageField(source='logo')
+    # avatarStore = serializers.ImageField(source='storeAvatar')
 
     class Meta:
         model = PartSupplier
         fields = ['id', 'user_id', 'user', 'brands', 'storeBrand', 'originName', 'origin',  'location', 'address',
-                  'storeName', 'contactNumber', 'storeLogo', 'avatarStore']
+                  'storeName', 'contactNumber', 'logo', 'storeAvatar']
 
     def create(self, validated_data):
         brands_data = validated_data.pop(
@@ -93,8 +93,6 @@ class PartSupplierSerializer (serializers.ModelSerializer):
 
 
 class ProductPartSupplierSerializer(serializers.ModelSerializer):
-    partSupplier = PartSupplierSerializer(
-        source='partSupplierId', read_only=True)
     # brands = serializers.ListField(write_only=True)
     partBrandsName = serializers.SerializerMethodField(read_only=True)
     # carModel = serializers.SerializerMethodField(read_only=True)
@@ -110,7 +108,7 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductPartSupplier
-        fields = ['partSupplierId', 'partSupplier',
+        fields = ['partSupplierId',
                   'productId', 'productName', 'category', 'CarModel', 'description', 'status', 'productImage',
                   'partBrandsName']
 
@@ -160,7 +158,7 @@ class workshopBrandsSerializer (serializers.ModelSerializer):
 
 
 class storeBrandsSerializer (serializers.ModelSerializer):
-    name = serializers.CharField(source='brands.name')
+    name = serializers.CharField(source='brands.name', read_only=True)
 
     class Meta:
         model = storeBrands
