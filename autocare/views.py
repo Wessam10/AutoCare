@@ -70,8 +70,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        print(serializer)
-        serializer.is_valid(raise_exception=True)
+        print("aaaaaaaaaaa11111aaaaaaaaaaa")
         if serializer.is_valid():
             user = serializer.user
             print('b')
@@ -735,9 +734,6 @@ class WorkShopOwnerViewSet (ModelViewSet):
 
             'user': workshopUser.pk
         }
-        k = self.get_serializer(data=request_data,)
-        k.is_valid()
-        k.save()
         # Return the response
         return Response(response_data, status=status.HTTP_201_CREATED)
 
