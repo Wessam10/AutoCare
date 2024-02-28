@@ -1182,11 +1182,11 @@ class shop1MaintenanceViewSet (ModelViewSet):
             request.data["transactionStatus"] = 6
         else:
             request.data["transactionStatus"] = 4
-        request.data["userId"] = carOwner.pk
+        request.data["userId"] = shop.userId.pk
         request.data['requestId'] = request_id
         request.data["carsId"] = shop.carsId.pk
         request.data['requestType'] = shop.requestType
-        request.data['workshopId'] = Owner.pk
+        request.data['workshopId'] = shop.workshopId.workshopOwnerId.pk
         serializer = RequestSerializer(
             instance=shop, data=request_data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -1497,7 +1497,8 @@ class wPartViewSet(ModelViewSet):
             'partSupplierId').distinct()
         print("@@", res)
         partSup = PartSupplier.objects.filter(id__in=res)
-        pp = PartSupplierSerializer(partSup, many=True)
+        pp = PartSupplierSerializer(
+            partSup, many=True, context={'request': request})
         return Response(pp.data)
         return super().list(request, *args, **kwargs)
 

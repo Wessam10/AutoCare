@@ -127,12 +127,23 @@ class ProductPartSupplierSerializer(serializers.ModelSerializer):
 
 
 class WPartSupplierSerializer(serializers.ModelSerializer):
-    # partSupplier = PartSupplierSerializer(
-    #     source='partSupplierId', read_only=True)
+    storeLogo = serializers.SerializerMethodField()
+    AvatarStore = serializers.SerializerMethodField()
+
+    def get_avatarLogo(self, obj):
+        if obj['logo']:
+            return self.context['request'].build_absolute_uri(obj['logo'])
+        return None
+
+    def get_storeLogo(self, obj):
+        print(obj)
+        print(obj.pk)
+        Brand = PartSupplier.objects.filter(partSupplierId=obj.pk)
+        return ProductPartSupplier.values_list("productId.productImage", flat=True)
 
     class Meta:
         model = ProductPartSupplier
-        fields = ['partSupplierId']
+        fields = ['partSupplierId', 'avatarLogo', 'AvatarStore']
 
 
 class WorkShopOwnerSerializer (serializers.ModelSerializer):
