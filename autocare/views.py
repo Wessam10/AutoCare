@@ -945,30 +945,33 @@ class MaintenanceViewSet (ModelViewSet):
             carOwner = CarOwner.objects.get(user_id=user)
 
             workshop_id = request.data.get('workshopId')
+            print("@@!!", workshop_id)
+            w = WorkShop.objects.get(id=workshop_id)
+            kra = w.workshopOwnerId.user_id
             request.data["userId"] = carOwner.pk
             request.data["transactionStatus"] = 1
             request_info = {}
-            # devices = FCMDevice.objects.get(user_id=workshop_id)
-            # print(devices.registration_id)
-            # print('ppppppppppppppppppppppppppppppppppppppppp')
-            # conn = http.client.HTTPSConnection("fcm.googleapis.com")
-            # payload = json.dumps({
-            #     "to": "cP7pxAjASjuCuH3HKumxbC:APA91bHNHBwWrDXf1whbLaOyvkLZuyuCRFF_JmZOWW4MDaeb7zobabASMK7KIHOYovpxqlbUlXcnw_0CyuGHFwHn79Aojrh_hLe71WgB5bjNW6wr1fvH776X86hXu8XMcln1SqyERRVQ",
-            #     "notification": {
-            #         "title": "New Request",
-            #         "body": "You have new Maintenance Request",
-            #         "mutable_content": True,
-            #         "sound": "Tri-tone"
-            #     },
+            devices = FCMDevice.objects.get(user_id=kra.pk)
+            print(devices.registration_id)
+            print('ppppppppppppppppppppppppppppppppppppppppp')
+            conn = http.client.HTTPSConnection("fcm.googleapis.com")
+            payload = json.dumps({
+                "to": devices.registration_id,
+                "notification": {
+                    "title": "New Request",
+                    "body": "You have new Maintenance Request",
+                    "mutable_content": True,
+                    "sound": "Tri-tone"
+                },
 
-            # })
-            # headers = {
-            #     'Content-Type': 'application/json',
-            #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-            # }
-            # conn.request("POST", "/fcm/send", payload, headers)
-            # res = conn.getresponse()
-            # data = res.read()
+            })
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+            }
+            conn.request("POST", "/fcm/send", payload, headers)
+            res = conn.getresponse()
+            data = res.read()
 
             for data in request_data:
                 print(data)
@@ -1012,27 +1015,29 @@ class MaintenanceViewSet (ModelViewSet):
             request.data["transactionStatus"] = 6
         else:
             request.data["transactionStatus"] = 2
-        # devices = FCMDevice.objects.get(user_id=shop.workshopId.pk)
-        # print('oooooooooooooooooooooooooooooooooooooooooo')
-        # print(devices.registration_id)
-        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
-        # payload = json.dumps({
-        #     "to": devices.registration_id,
-        #     "notification": {
-        #         "title": "New Request",
-        #         "body": "Set Time For Request  ",
-        #         "mutable_content": True,
-        #         "sound": "Tri-tone"
-        #     },
+        k = WorkShop.objects.get(workshopOwnerId=shop.workshopId.pk)
+        w = k.workshopOwnerId.user_id
+        devices = FCMDevice.objects.get(user_id=w.pk)
+        print('oooooooooooooooooooooooooooooooooooooooooo')
+        print(devices.registration_id)
+        conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        payload = json.dumps({
+            "to": devices.registration_id,
+            "notification": {
+                "title": "New Request",
+                "body": "Set Time For Request  ",
+                "mutable_content": True,
+                "sound": "Tri-tone"
+            },
 
-        # })
-        # headers = {
-        #     'Content-Type': 'application/json',
-        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-        # }
-        # conn.request("POST", "/fcm/send", payload, headers)
-        # res = conn.getresponse()
-        # data = res.read()
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        }
+        conn.request("POST", "/fcm/send", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
         print(shop.pk)
         request.data["userId"] = shop.userId.pk
         request.data['requestId'] = request_id
@@ -1071,27 +1076,26 @@ class shopMaintenanceViewSet (ModelViewSet):
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
         Owner = WorkShopOwner.objects.get(user_id=user)
-        k = shop.userId.pk
-        # devices = FCMDevice.objects.get(user_id=k)
-        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
-        # payload = json.dumps({
-        #     "to": devices.registration_id,
-        #     "notification": {
-        #         "title": "New Request",
-        #         "body": "You have Date for Request Accept or Reject  ",
-        #         "mutable_content": True,
-        #         "sound": "Tri-tone"
-        #     },
+        k = shop.userId.user_id
+        devices = FCMDevice.objects.get(user_id=k.pk)
+        conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        payload = json.dumps({
+            "to": devices.registration_id,
+            "notification": {
+                "title": "New Request",
+                "body": "You have Date for Request Accept or Reject  ",
+                "mutable_content": True,
+                "sound": "Tri-tone"
+            },
 
-        # })
-        # headers = {
-        #     'Content-Type': 'application/json',
-        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-        # }
-        # conn.request("POST", "/fcm/send", payload, headers)
-        # res = conn.getresponse()
-        # data = res.read()
-        # Assuming you have a 'status' field
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        }
+        conn.request("POST", "/fcm/send", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
         s = int(request.data.get('status', ''))
         print(s)
         if s == 3:
@@ -1152,26 +1156,26 @@ class shop1MaintenanceViewSet (ModelViewSet):
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
         Owner = WorkShopOwner.objects.get(user_id=user)
-        carOwner = shop.userId
-        # devices = FCMDevice.objects.get(user_id=carOwner.pk)
-        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
-        # payload = json.dumps({
-        #     "to": devices.registration_id,
-        #     "notification": {
-        #         "title": "New Request",
-        #         "body": " Offer Price ",
-        #         "mutable_content": True,
-        #         "sound": "Tri-tone"
-        #     },
+        carOwner = shop.userId.user_id
+        devices = FCMDevice.objects.get(user_id=carOwner.pk)
+        conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        payload = json.dumps({
+            "to": devices.registration_id,
+            "notification": {
+                "title": "New Request",
+                "body": " Offer Price ",
+                "mutable_content": True,
+                "sound": "Tri-tone"
+            },
 
-        # })
-        # headers = {
-        #     'Content-Type': 'application/json',
-        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-        # }
-        # conn.request("POST", "/fcm/send", payload, headers)
-        # res = conn.getresponse()
-        # data = res.read()
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        }
+        conn.request("POST", "/fcm/send", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
         s = int(request.data.get('status', ''))
         print(s)
         if s == 3:
@@ -1207,25 +1211,27 @@ class AcceptMaintenanceViewSet (ModelViewSet):
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
         Owner = CarOwner.objects.get(user_id=user)
-        # devices = FCMDevice.objects.get(user_id=shop.workshopId.pk)
-        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
-        # payload = json.dumps({
-        #     "to": devices.registration_id,
-        #     "notification": {
-        #         "title": "New Request",
-        #         "body": "Your Offer has been approved",
-        #         "mutable_content": True,
-        #         "sound": "Tri-tone"
-        #     },
+        k = shop.workshopId.workshopOwnerId.user_id
+        devices = FCMDevice.objects.get(
+            user_id=k.pk)
+        conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        payload = json.dumps({
+            "to": devices.registration_id,
+            "notification": {
+                "title": "New Request",
+                "body": "Your Offer has been approved",
+                "mutable_content": True,
+                "sound": "Tri-tone"
+            },
 
-        # })
-        # headers = {
-        #     'Content-Type': 'application/json',
-        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-        # }
-        # conn.request("POST", "/fcm/send", payload, headers)
-        # res = conn.getresponse()
-        # data = res.read()
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        }
+        conn.request("POST", "/fcm/send", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
         if shop.status == 'CANCELLED':  # Assuming you have a 'status' field
             request.data["transactionStatus"] = 6
         else:
@@ -1267,38 +1273,27 @@ class shop2MaintenanceViewSet (ModelViewSet):
         request.data._mutable = True
         shop = Request.objects.get(id=request_id)
         mai = maintenance.objects.get(requestId=request_id)
-        # Owner = WorkShopOwner.objects.get(user_id=user)
-        # devices = FCMDevice.objects.get(user_id=shop.userId.pk)
-        # status = request.data.get('status')
-        # if status == 'DONE':
-        #     self._send_notification(
-        #         devices, "Maintenance Request Completed", "The maintenance request has been completed.")
-        # elif status == 'CANCELLED':
-        #     self._send_notification(
-        #         devices, "Maintenance Request Cancelled", "The maintenance request has been cancelled.")
-        #     self._send_notification(
-        #         devices, "Additional Information", "Please contact the customer for further details.")
-        # else:
-        # Handle other statuses if needed
-        # pass
-        # conn = http.client.HTTPSConnection("fcm.googleapis.com")
-        # payload = json.dumps({
-        #     "to": devices.registration_id,
-        #     "notification": {
-        #         "title": "New Request",
-        #         "body": "You have new Maintenance Request ",
-        #         "mutable_content": True,
-        #         "sound": "Tri-tone"
-        #     },
+        k = shop.userId.user_id.pk
+        devices = FCMDevice.objects.get(
+            user_id=k)
+        conn = http.client.HTTPSConnection("fcm.googleapis.com")
+        payload = json.dumps({
+            "to": devices.registration_id,
+            "notification": {
+                "title": "New Request",
+                "body": "Your Request has finished",
+                "mutable_content": True,
+                "sound": "Tri-tone"
+            },
 
-        # })
-        # headers = {
-        #     'Content-Type': 'application/json',
-        #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-        # }
-        # conn.request("POST", "/fcm/send", payload, headers)
-        # res = conn.getresponse()
-        # data = res.read()
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+        }
+        conn.request("POST", "/fcm/send", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
         request.data["transactionStatus"] = 6
         request.data["userId"] = shop.userId.pk
         request.data['requestId'] = request_id
