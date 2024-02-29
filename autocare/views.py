@@ -1347,6 +1347,8 @@ class WorkShopImagesViewSet (ModelViewSet):
 class TowCarViewSet(ModelViewSet):
     queryset = TowCars.objects.filter()
     serializer_class = TowCarsSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['available']
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
@@ -1483,6 +1485,8 @@ class favoriteViewSet (ModelViewSet):
 class wPartViewSet(ModelViewSet):
     queryset = ProductPartSupplier.objects.all()  # Use the pre-defined queryset
     serializer_class = WPartSupplierSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['productId']
 
     # def get_queryset(self):
 
