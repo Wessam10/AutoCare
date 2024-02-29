@@ -921,27 +921,33 @@ class MaintenanceViewSet (ModelViewSet):
             request.data["userId"] = carOwner.pk
             request.data["transactionStatus"] = 1
             request_info = {}
-            devices = FCMDevice.objects.get(user_id=kra.pk)
-            print(devices.registration_id)
-            print('ppppppppppppppppppppppppppppppppppppppppp')
-            conn = http.client.HTTPSConnection("fcm.googleapis.com")
-            payload = json.dumps({
-                "to": devices.registration_id,
-                "notification": {
-                    "title": "New Request",
-                    "body": "You have new Maintenance Request",
-                    "mutable_content": True,
-                    "sound": "Tri-tone"
-                },
 
-            })
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-            }
-            conn.request("POST", "/fcm/send", payload, headers)
-            res = conn.getresponse()
-            data = res.read()
+            try:
+                devices = FCMDevice.objects.get(user_id=kra.pk)
+                print(devices.registration_id)
+                print('ppppppppppppppppppppppppppppppppppppppppp')
+                conn = http.client.HTTPSConnection("fcm.googleapis.com")
+                payload = json.dumps({
+                    "to": devices.registration_id,
+                    "notification": {
+                        "title": "New Request",
+                        "body": "You have new Maintenance Request",
+                        "mutable_content": True,
+                        "sound": "Tri-tone"
+                    },
+
+                })
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+                }
+                conn.request("POST", "/fcm/send", payload, headers)
+                res = conn.getresponse()
+                data = res.read()
+            except FCMDevice.DoesNotExist:
+                # Handle case where no device token is found
+                print("No device token found for workshop owner")
+                return Response({"message": "No device token found for workshop owner"}, status=status.HTTP_400_BAD_REQUEST)
 
             for data in request_data:
                 print(data)
