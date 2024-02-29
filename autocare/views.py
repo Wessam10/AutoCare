@@ -230,14 +230,16 @@ class CurrentCarsViewSet (ModelViewSet):
     serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['workshopId']
+    filterset_fields = ['workshopId', 'transactionStatus']
 
     def get_queryset(self):
         user_id = self.request.user.pk
         owner = WorkShopOwner.objects.get(user_id=user_id)
         shop = WorkShop.objects.filter(workshopOwnerId=owner).first()
+        print(shop)
         k = Request.objects.filter(
-            workshopId=shop, transactionStatus=5).order_by('pk')
+            workshopId=shop.pk).order_by('pk')
+        print(k)
         return k
 
 
