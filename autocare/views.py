@@ -181,7 +181,15 @@ class RequestViewSet (ModelViewSet):
         user_id = self.request.user.pk
         owner = WorkShopOwner.objects.get(user_id=user_id)
         shop = WorkShop.objects.filter(workshopOwnerId=owner).first()
-        return Request.objects.filter(workshopId=shop).order_by('pk')
+        return Request.objects.filter(workshopId=shop).order_by('pk').exclude(transactionStatus=6)
+
+
+class workShopRequestViewSet (ModelViewSet):
+    queryset = Request.objects.all().order_by('pk')
+    serializer_class = RequestSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['userId', 'requestType', 'status', 'transactionStatus']
 
 
 class CarOwnerRequestViewSet (ModelViewSet):
@@ -895,6 +903,7 @@ class MaintenanceViewSet (ModelViewSet):
             "User does not have permission to perform this action.")
 
     def create(self, request, *args, **kwargs):
+        request_id = kwargs.get('pk')
         try:
             if self.check_permissions(request):
 
@@ -912,36 +921,31 @@ class MaintenanceViewSet (ModelViewSet):
             request.data["userId"] = carOwner.pk
             request.data["transactionStatus"] = 1
             request_info = {}
-            try:
-                devices = FCMDevice.objects.get(user_id=kra.pk)
-                print(devices.registration_id)
-                print('ppppppppppppppppppppppppppppppppppppppppp')
-                conn = http.client.HTTPSConnection("fcm.googleapis.com")
-                payload = json.dumps({
-                    "to": devices.registration_id,
-                    "notification": {
-                        "title": "New Request",
-                        "body": "You have new Maintenance Request",
-                        "mutable_content": True,
-                        "sound": "Tri-tone"
-                    },
-                })
-                headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-                }
-                conn.request("POST", "/fcm/send", payload, headers)
-                res = conn.getresponse()
-                data = res.read()
-            except FCMDevice.DoesNotExist:
-                # Handle case where no device token is found
-                print("No device token found for workshop owner")
-                return Response({"message": "No device token found for workshop owner"}, status=status.HTTP_400_BAD_REQUEST)
+            devices = FCMDevice.objects.get(user_id=kra.pk)
+            print(devices.registration_id)
+            print('ppppppppppppppppppppppppppppppppppppppppp')
+            conn = http.client.HTTPSConnection("fcm.googleapis.com")
+            payload = json.dumps({
+                "to": devices.registration_id,
+                "notification": {
+                    "title": "New Request",
+                    "body": "You have new Maintenance Request",
+                    "mutable_content": True,
+                    "sound": "Tri-tone"
+                },
 
-            # Handle other potential exceptions
-            except Exception as e:
-                print(f"An error occurred: {e}")
-                return Response({"error": "An unexpected error occurred. Please try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            })
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+            }
+            conn.request("POST", "/fcm/send", payload, headers)
+            res = conn.getresponse()
+            data = res.read()
+
+            for data in request_data:
+                print(data)
+                request_info[data] = request_data.get(data, None)
 
             serializer = RequestSerializer(data=request_info)
             serializer.is_valid()

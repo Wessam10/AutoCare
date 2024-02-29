@@ -16,6 +16,7 @@ routers.register('AcceptPriceDealMaintenance',
 routers.register('FinishedMaintenance', views.shop2MaintenanceViewSet)
 routers.register('AddOrigin', views.OriginViewSet)
 routers.register('AddRequest', views.RequestViewSet)
+routers.register('workShopRequest', views.workShopRequestViewSet)
 routers.register('CarOwnerRequest', views.CarOwnerRequestViewSet)
 routers.register('AddProduct', views.productViewSet)
 routers.register('AddTowRequest', views.TowRequestViewSet)
