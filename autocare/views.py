@@ -200,7 +200,7 @@ class CarOwnerRequestViewSet (ModelViewSet):
 class ExcludeRequestViewSet(ModelViewSet):
     queryset = Request.objects.all().order_by('pk')
     serializer_class = RequestSerializer
-    # permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]  # Uncomment for permission control
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['userId', 'requestType',
                         'status']  # Remove 'transactionStatus'
@@ -210,15 +210,10 @@ class ExcludeRequestViewSet(ModelViewSet):
         owner = CarOwner.objects.get(user_id=user_id)
         queryset = Request.objects.filter(userId=owner.pk)
 
-        # Get transactionStatus from request data
-        exclude_transaction_status = self.request.data.get('transactionStatus')
+        queryset = Request.objects.filter(
+            userId=owner.pk).exclude(transactionStatus=6)
 
-        # Filter with exclusions
-        if exclude_transaction_status:
-            queryset = queryset.exclude(
-                transactionStatus=exclude_transaction_status)
-
-        return queryset.order_by('pk')
+        return queryset
 
 
 class CurrentCarsViewSet (ModelViewSet):
@@ -882,64 +877,6 @@ class MaintenanceViewSet (ModelViewSet):
         except CarOwner.DoesNotExist:
             raise NotFound("no request")
 
-    # def create(self, request, *args, **kwargs):
-    #     try:
-    #         request.data._mutable = True
-    #         user = self.request.user.pk
-
-    #         request_data = request.data
-    #         carOwner = CarOwner.objects.get(user_id=user)
-
-    #         workshop_id = request.data.get('workshopId')
-    #         request.data["userId"] = carOwner.pk
-    #         request.data["transactionStatus"] = 1
-    #         request_info = {}
-    #         # devices = FCMDevice.objects.get(user_id=workshop_id)
-    #         # print(devices.registration_id)
-    #         # print('ppppppppppppppppppppppppppppppppppppppppp')
-    #         # conn = http.client.HTTPSConnection("fcm.googleapis.com")
-    #         # payload = json.dumps({
-    #         #     "to": "cP7pxAjASjuCuH3HKumxbC:APA91bHNHBwWrDXf1whbLaOyvkLZuyuCRFF_JmZOWW4MDaeb7zobabASMK7KIHOYovpxqlbUlXcnw_0CyuGHFwHn79Aojrh_hLe71WgB5bjNW6wr1fvH776X86hXu8XMcln1SqyERRVQ",
-    #         #     "notification": {
-    #         #         "title": "New Request",
-    #         #         "body": "You have new Maintenance Request",
-    #         #         "mutable_content": True,
-    #         #         "sound": "Tri-tone"
-    #         #     },
-
-    #         # })
-    #         # headers = {
-    #         #     'Content-Type': 'application/json',
-    #         #     'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-    #         # }
-    #         # conn.request("POST", "/fcm/send", payload, headers)
-    #         # res = conn.getresponse()
-    #         # data = res.read()
-
-    #         for data in request_data:
-    #             print(data)
-    #             request_info[data] = request_data.get(data, None)
-
-    #         serializer = RequestSerializer(data=request_info)
-    #         serializer.is_valid()
-    #         if serializer.errors:
-    #             print(serializer.errors)
-    #         serializer.is_valid(raise_exception=True)
-    #         r1 = serializer.save()
-
-    #         request_data["requestId"] = r1.pk
-    #         print(request_data)
-    #         print("1234")
-    #         k = maintenanceSerializer(data=request_data,)
-    #         print(k.is_valid())
-    #         k.is_valid()
-    #         if serializer.errors:
-    #             print(serializer.errors)
-    #         k.is_valid(raise_exception=True)
-    #         k.save()
-
-    #         return Response(request.data, status=status.HTTP_200_OK)
-
     def handle_permission_error(self, request):
         # Check if specific permission error is related to rate limiting
         if isinstance(self.throttled(request=request), ThrottledResponse):
@@ -975,31 +912,36 @@ class MaintenanceViewSet (ModelViewSet):
             request.data["userId"] = carOwner.pk
             request.data["transactionStatus"] = 1
             request_info = {}
-            devices = FCMDevice.objects.get(user_id=kra.pk)
-            print(devices.registration_id)
-            print('ppppppppppppppppppppppppppppppppppppppppp')
-            conn = http.client.HTTPSConnection("fcm.googleapis.com")
-            payload = json.dumps({
-                "to": devices.registration_id,
-                "notification": {
-                    "title": "New Request",
-                    "body": "You have new Maintenance Request",
-                    "mutable_content": True,
-                    "sound": "Tri-tone"
-                },
+            try:
+                devices = FCMDevice.objects.get(user_id=kra.pk)
+                print(devices.registration_id)
+                print('ppppppppppppppppppppppppppppppppppppppppp')
+                conn = http.client.HTTPSConnection("fcm.googleapis.com")
+                payload = json.dumps({
+                    "to": devices.registration_id,
+                    "notification": {
+                        "title": "New Request",
+                        "body": "You have new Maintenance Request",
+                        "mutable_content": True,
+                        "sound": "Tri-tone"
+                    },
+                })
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+                }
+                conn.request("POST", "/fcm/send", payload, headers)
+                res = conn.getresponse()
+                data = res.read()
+            except FCMDevice.DoesNotExist:
+                # Handle case where no device token is found
+                print("No device token found for workshop owner")
+                return Response({"message": "No device token found for workshop owner"}, status=status.HTTP_400_BAD_REQUEST)
 
-            })
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
-            }
-            conn.request("POST", "/fcm/send", payload, headers)
-            res = conn.getresponse()
-            data = res.read()
-
-            for data in request_data:
-                print(data)
-                request_info[data] = request_data.get(data, None)
+            # Handle other potential exceptions
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                return Response({"error": "An unexpected error occurred. Please try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             serializer = RequestSerializer(data=request_info)
             serializer.is_valid()
