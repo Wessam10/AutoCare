@@ -43,6 +43,7 @@ routers.register('Status', views.StatusViewSet)
 routers.register('TransactionStatus', views.TransactionStatusViewSet)
 routers.register('RequestType', views.RequestTypeViewSet)
 routers.register('brandStore', views.brandStoreViewSet)
+routers.register('ExcludeRequest', views.ExcludeRequestViewSet)
 # routers.register('ToggleTowCarAvailability',
 #                  views.ToggleTowCarAvailability, basename="Availability")
 routers.register('ImageViewSet', views.ImageViewSet, basename="image")

@@ -197,6 +197,30 @@ class CarOwnerRequestViewSet (ModelViewSet):
         return Request.objects.filter(userId=owner.pk).order_by('pk')
 
 
+class ExcludeRequestViewSet(ModelViewSet):
+    queryset = Request.objects.all().order_by('pk')
+    serializer_class = RequestSerializer
+    # permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['userId', 'requestType',
+                        'status']  # Remove 'transactionStatus'
+
+    def get_queryset(self):
+        user_id = self.request.user.pk
+        owner = CarOwner.objects.get(user_id=user_id)
+        queryset = Request.objects.filter(userId=owner.pk)
+
+        # Get transactionStatus from request data
+        exclude_transaction_status = self.request.data.get('transactionStatus')
+
+        # Filter with exclusions
+        if exclude_transaction_status:
+            queryset = queryset.exclude(
+                transactionStatus=exclude_transaction_status)
+
+        return queryset.order_by('pk')
+
+
 class CurrentCarsViewSet (ModelViewSet):
     # pagination_class = StandardResultsSetPagination
     queryset = Request.objects.all().order_by('pk')
