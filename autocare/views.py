@@ -593,8 +593,10 @@ class TowRequestViewSet (ModelViewSet):
                 distances.append({'tow_car_id': i.id, 'distance': distance})
 
             sorted_distances = sorted(distances, key=lambda x: x['distance'])
+            distances_list = [{'tow_car_id': item['tow_car_id'],
+                               'distance': item['distance']} for item in sorted_distances]
 
-            return Response({'TowCars': sorted_distances}, status=200)
+            return Response(distances_list)
 
         except (ValueError, AttributeError) as e:
             # Handle validation errors and missing attributes gracefully
