@@ -605,9 +605,10 @@ class TowRequestViewSet (ModelViewSet):
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
         user = self.request.user.pk
-        print('1234')
+        print('1234', self.get_distance_for_all_cars(
+            request).data[0]['tow_car_id'])
         sorted_distances = self.get_distance_for_all_cars(
-            request).data['TowCars']
+            request).data
         print(sorted_distances[0])
         request.data["towCarId"] = sorted_distances[0]['tow_car_id']
         print(user)
@@ -643,7 +644,7 @@ class TowRequestViewSet (ModelViewSet):
         except FCMDevice.DoesNotExist:
             # Handle case where no device token is found
             print("No device token found for workshop owner")
-            return Response({"message": "No device token found for workshop owner"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "No device token found for TowCar "}, status=status.HTTP_400_BAD_REQUEST)
 
         request.data["userId"] = carOwner.pk
 
