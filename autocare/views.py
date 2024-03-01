@@ -1148,7 +1148,7 @@ class shopMaintenanceViewSet (ModelViewSet):
         request.data['requestId'] = request_id
         request.data["carsId"] = shop.carsId.pk
         request.data['requestType'] = shop.requestType
-        request.data['workshopId'] = Owner.pk
+        request.data['workshopId'] = shop.workshopId
         serializer = RequestSerializer(
             instance=shop, data=request_data, partial=True)
         serializer.is_valid(raise_exception=True)
