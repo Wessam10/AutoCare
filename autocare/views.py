@@ -544,69 +544,106 @@ class TowRequestViewSet (ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def get_distance_for_all_cars(self, request):
-        tow_cars = TowCars.objects.all().order_by('pk')  # Get all tow cars
-        distances = []
-        coordinates1 = request.data.get('currentLocation', '').strip()
-        latitude1, longitude1 = coordinates1.split(',')
-        for i in tow_cars:
-            coordinates = i.location
-            latitude, longitude = coordinates.split(',')
+        """
+        Calculates and returns the distances to all available tow cars from the provided location.
 
+        Raises:
+            ValueError: If the 'currentLocation' is missing or invalid in the request data.
+            AttributeError: If a tow car has no location attribute.
+        """
+
+        try:
+            # Validate and extract coordinates from request data
+            coordinates1 = request.data.get('currentLocation', '').strip()
+            if not coordinates1:
+                raise ValueError(
+                    "'currentLocation' is required in the request data.")
+            latitude1, longitude1 = coordinates1.split(',')
+            latitude1 = float(latitude1)
+            longitude1 = float(longitude1)
+
+            # Get all available tow cars
+            tow_cars = TowCars.objects.filter(available=True).order_by('pk')
+
+            distances = []
             R = 6371  # Radius of the Earth in kilometers
 
-            # Convert latitude and longitude from degrees to radians
-            lat1_rad = math.radians(float(latitude))
-            lon1_rad = math.radians(float(longitude))
-            lat2_rad = math.radians(float(latitude1))
-            lon2_rad = math.radians(float(longitude1))
+            # Convert coordinates to radians and calculate distance for each tow car
+            for i in tow_cars:
+                # Check for missing location
+                if not i.location:
+                    # Handle tow car with no location (e.g., log or skip)
+                    print(f"Tow car with ID {i.id} has no location.")
+                    continue
 
-            # Calculate the differences between the latitudes and longitudes
-            delta_lat = lat2_rad - lat1_rad
-            delta_lon = lon2_rad - lon1_rad
+                latitude2, longitude2 = map(float, i.location.split(','))
+                lat1_rad = math.radians(latitude1)
+                lon1_rad = math.radians(longitude1)
+                lat2_rad = math.radians(latitude2)
+                lon2_rad = math.radians(longitude2)
 
-            # Apply the Haversine formula
-            a = math.sin(delta_lat/2)**2 + math.cos(lat1_rad) * \
-                math.cos(lat2_rad) * math.sin(delta_lon/2)**2
-            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-            distance = R * c
+                delta_lat = lat2_rad - lat1_rad
+                delta_lon = lon2_rad - lon1_rad
 
-            distances.append(
-                {'tow_car_id': i.id, 'distance': distance})
+                a = math.sin(delta_lat / 2) ** 2 + math.cos(lat1_rad) * \
+                    math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2
+                c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                distance = R * c
 
-            sorted_distances = sorted(
-                distances, key=lambda x: x['distance'])
+                distances.append({'tow_car_id': i.id, 'distance': distance})
 
-        return Response({'TowCars': sorted_distances}, status=200)
+            sorted_distances = sorted(distances, key=lambda x: x['distance'])
+
+            return Response({'TowCars': sorted_distances}, status=200)
+
+        except (ValueError, AttributeError) as e:
+            # Handle validation errors and missing attributes gracefully
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
-        user = self.request.user.pk
-        print(user)
-        request_data = request.data
-        carOwner = CarOwner.objects.get(user_id=user)
-        car = Cars.objects.get(userId=carOwner.pk)
-        towOwner = sorted_distances[0]['tow_car_id']
-        # devices = FCMDevice.objects.get(user_id=towOwner)
-        # status = request.data.get('status')
-        # if status == 'DONE':
-        #     self._send_notification(
-        #         devices, "Maintenance Request Completed", "The maintenance request has been completed.")
-        # elif status == 'CANCELLED':
-        #     self._send_notification(
-        #         devices, "Maintenance Request Cancelled", "The maintenance request has been cancelled.")
-        #     self._send_notification(
-        #         devices, "Additional Information", "Please contact the customer for further details.")
-        # else:
-        #     # Handle other statuses if needed
-        #     pass
-        print(car)
         request.data._mutable = True
-        request.data["userId"] = carOwner.pk
-        request.data["carsId"] = car.pk
+        user = self.request.user.pk
         print('1234')
         sorted_distances = self.get_distance_for_all_cars(
             request).data['TowCars']
         print(sorted_distances[0])
         request.data["towCarId"] = sorted_distances[0]['tow_car_id']
+        print(user)
+        request_data = request.data
+        carOwner = CarOwner.objects.get(user_id=user)
+        towOwner = sorted_distances[0]['tow_car_id']
+        print(towOwner)
+        us = TowCars.objects.get(id=towOwner)
+        k = us.userId.user_id
+        try:
+            devices = FCMDevice.objects.get(user_id=k.pk)
+            print(devices.registration_id)
+            print('ppppppppppppppppppppppppppppppppppppppppp')
+            conn = http.client.HTTPSConnection("fcm.googleapis.com")
+            print(devices.registration_id, 'ddddddddddddddddddddddddddd')
+            payload = json.dumps({
+                "to": devices.registration_id,
+                "notification": {
+                    "title": "New Request",
+                    "body": "You have new Tow Request",
+                    "mutable_content": True,
+                    "sound": "Tri-tone"
+                },
+
+            })
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+            }
+            conn.request("POST", "/fcm/send", payload, headers)
+            res = conn.getresponse()
+            data = res.read()
+        except FCMDevice.DoesNotExist:
+            # Handle case where no device token is found
+            print("No device token found for workshop owner")
+            return Response({"message": "No device token found for workshop owner"}, status=status.HTTP_400_BAD_REQUEST)
+
+        request.data["userId"] = carOwner.pk
 
         request_info = {}
 
@@ -626,6 +663,9 @@ class TowRequestViewSet (ModelViewSet):
         print(request_data)
         k = TowRequestSerializer(data=request_data,)
         k.is_valid()
+        if k.errors:
+            print(k.errors)
+        k.is_valid()
         k.save()
         print(k.is_valid())
 
@@ -637,20 +677,41 @@ class TowRequestViewSet (ModelViewSet):
         user = self.request.user.pk
         request.data._mutable = True
         shop = Request.objects.get(id=request_id)
+        k = shop.userId.user_id
         mai = TowRequest.objects.get(requestId=shop.pk)
-        # devices = FCMDevice.objects.get(user_id=shop.userId.pk)
-        # status = request.data.get('status')
-        # if status == 'done':
-        #     self._send_notification(
-        #         devices, "Maintenance Request Completed", "The maintenance request has been completed.")
-        # elif status == 'cancelled':
-        #     self._send_notification(
-        #         devices, "Maintenance Request Cancelled", "The maintenance request has been cancelled.")
-        #     self._send_notification(
-        #         devices, "Additional Information", "Please contact the customer for further details.")
-        # else:
-        #     # Handle other statuses if needed
-        #     pass
+        s = int(request.data.get('status', ''))
+        print(s)
+        if s == 3 or s == 4:
+            request.data["transactionStatus"] = 6
+        else:
+            request.data["transactionStatus"] = 5
+        try:
+            devices = FCMDevice.objects.get(user_id=k.pk)
+            print(devices.registration_id)
+            print('ppppppppppppppppppppppppppppppppppppppppp')
+            conn = http.client.HTTPSConnection("fcm.googleapis.com")
+            print(devices.registration_id, 'ddddddddddddddddddddddddddd')
+            payload = json.dumps({
+                "to": devices.registration_id,
+                "notification": {
+                    "title": "New Request",
+                    "body": "Check Request info",
+                    "mutable_content": True,
+                    "sound": "Tri-tone"
+                },
+
+            })
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': 'key=AAAAMky24Wg:APA91bG5ESVaRrLCG4mIQFN7vFCNLcRLlEcnfBrmDR7uUlPqSXMTlLtaYTnZMKQAWbtAsOpmDmUPvm_6RSO3JKs30-44FKhMBS3dVUdQKgNk-I0BZ9Aw5L67yGPWw8aoyxFywD_viqbO'
+            }
+            conn.request("POST", "/fcm/send", payload, headers)
+            res = conn.getresponse()
+            data = res.read()
+        except FCMDevice.DoesNotExist:
+            # Handle case where no device token is found
+            print("No device token found for workshop owner")
+            return Response({"message": "No device token found for workshop owner"}, status=status.HTTP_400_BAD_REQUEST)
         lat1_str, lon1_str = mai.currentLocation.split(',')
         lat2_str, lon2_str = mai.destination.split(',')
         lat1 = float(lat1_str)

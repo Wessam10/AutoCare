@@ -266,12 +266,13 @@ class checkup (models.Model):
 class TowRequest (models.Model):
     requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
     towCarId = models.ForeignKey(TowCars, on_delete=models.CASCADE)
-    cost = models.DecimalField(max_digits=30, decimal_places=2)
+    cost = models.DecimalField(
+        max_digits=30, decimal_places=2, null=True, blank=True)
     currentLocation = models.CharField(max_length=255)
     destination = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.requestId.userId.fullName
+        return self.requestId.requestType
 
 
 class workshopBrands (models.Model):
