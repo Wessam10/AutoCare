@@ -593,8 +593,8 @@ class TowRequestViewSet (ModelViewSet):
                 distances.append({'tow_car_id': i.id, 'distance': distance})
 
             sorted_distances = sorted(distances, key=lambda x: x['distance'])
-            distances_list = [{'tow_car_id': item['tow_car_id'],
-                               'distance': item['distance']} for item in sorted_distances]
+            distances_list = [{'tow_car_id': item['tow_car_id'], 'distance': item['distance'], 'location': TowCars.objects.get(
+                id=item['tow_car_id']).location} for item in sorted_distances]
 
             return Response(distances_list)
 
